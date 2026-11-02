@@ -61,6 +61,7 @@ html { color-scheme: light; }
   <section class="view" id="v-start">
     <h2 class="big" data-i="s_title">Your first run, planned.</h2>
     <p class="lede" style="font-size:16px" data-i="s_lede">Three quick questions. We'll give you four small steps.</p>
+    <div class="card" id="today" hidden aria-live="polite"><p class="meta" data-i="today_t">Today's best time to run</p><p class="qtitle" id="today-main"></p><p class="meta" id="today-sub"></p><a id="today-link" class="chip" target="_blank" rel="noopener" data-i="today_more" hidden>Hour-by-hour heat guide</a></div>
     <div class="card" id="q">
       <p class="meta" id="q-step"></p>
       <h3 class="qtitle" id="q-title"></h3>
@@ -127,6 +128,7 @@ html { color-scheme: light; }
   </footer>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="heat.js"></script>
 <script>
 (function () {
   "use strict";
@@ -159,6 +161,7 @@ __GROUPS__
   /* ---------- i18n ---------- */
   var I = {
     en: {
+      today_t: "Today's best time to run", today_more: "Hour-by-hour heat guide", today_none: "No calm window left today. Try tomorrow's first light.", today_lv: ["Good conditions","Run with care","Hard conditions","Heat warning: skip or go indoors"],
       eyebrow: "Chennai · by runners, for runners", tag: "Your first 90 days of running, in one place.",
       nav_start: "Start here", nav_events: "Events", nav_groups: "Groups", nav_spots: "Spots", nav_learn: "Learn",
       s_title: "Your first run, planned.", s_lede: "Three quick questions. We'll give you four small steps.",
@@ -183,6 +186,7 @@ __GROUPS__
     },
     ta: {
       eyebrow: "சென்னை · ஓட்டக்காரர்களால், ஓட்டக்காரர்களுக்காக", tag: "ஓட்டத்தின் முதல் 90 நாட்கள், ஒரே இடத்தில்.",
+      today_t: "இன்று ஓட சிறந்த நேரம்", today_more: "மணி வாரியான வெப்ப வழிகாட்டி", today_none: "இன்று அமைதியான நேரம் இல்லை. நாளை அதிகாலையை முயலுங்கள்.", today_lv: ["நல்ல சூழல்","கவனத்துடன் ஓடுங்கள்","கடினமான சூழல்","வெப்ப எச்சரிக்கை: ஓட வேண்டாம் அல்லது உள்ளரங்கில்"],
       nav_start: "இங்கே தொடங்குங்கள்", nav_events: "நிகழ்வுகள்", nav_groups: "குழுக்கள்", nav_spots: "ஓடும் இடங்கள்", nav_learn: "கற்றுக்கொள்ள",
       s_title: "உங்கள் முதல் ஓட்டம், திட்டமிடப்பட்டது.", s_lede: "மூன்று சிறு கேள்விகள். உங்களுக்கு நான்கு சிறிய படிகள் தருகிறோம்.",
       q_where: "நீங்கள் எந்தப் பகுதியில் வசிக்கிறீர்கள்?", q_when: "எப்போது ஓட முடியும்?", q_goal: "உங்கள் இலக்கு என்ன?", go: "என் பாதையைக் காட்டு",
@@ -212,6 +216,33 @@ __GROUPS__
   function zoneLabel(z) { for (var i = 0; i < ZONES.length; i++) if (ZONES[i][0] === z) return T(ZONES[i][1]).split(" (")[0]; return z; }
 
 __LEARN__
+
+
+  /* ---------- today card (heat forecast; hidden if forecast unavailable) ---------- */
+  var HEAT_URL = ""; /* set to your Chennai Heat Hours address, e.g. "https://chennai-heat-hours.vercel.app" */
+  var todayData = null;
+  function hh(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? " AM" : " PM"); }
+  function renderToday() {
+    if (!todayData) return;
+    var now = Heat.nowIST(), hs = todayData.days[now.date];
+    if (!hs) return;
+    var lo = Math.max(4, now.hour), w = Heat.windows(hs, lo, 21);
+    var main = $("today-main"), sub = $("today-sub");
+    if (!w.runs.length || w.level >= 3) { main.textContent = T("today_none"); sub.textContent = ""; }
+    else {
+      main.textContent = w.runs.map(function (r) { return r.from === r.to ? hh(r.from) : hh(r.from) + " – " + hh(r.to + 1); }).join("  ·  ");
+      sub.textContent = T("today_lv")[w.level];
+    }
+    var cur = hs[now.hour]; if (cur && cur.level >= 2) sub.textContent = T("today_lv")[cur.level] + (sub.textContent && sub.textContent !== T("today_lv")[cur.level] ? " · " + sub.textContent : "");
+    var a = $("today-link"); if (HEAT_URL) { a.href = HEAT_URL; a.hidden = false; }
+    $("today").hidden = false;
+  }
+  function loadToday() {
+    if (typeof Heat === "undefined" || typeof fetch !== "function") return;
+    var u = Heat.urls();
+    Promise.all([fetch(u.weather).then(function (r) { if (!r.ok) throw 0; return r.json(); }), fetch(u.air).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })])
+      .then(function (r) { todayData = Heat.build(r[0], r[1]); renderToday(); }).catch(function () { $("today").hidden = true; });
+  }
 
   /* ---------- router ---------- */
   var TABS = ["start", "events", "groups", "spots", "learn"], cur = "start";
@@ -505,7 +536,7 @@ __LEARN__
     qa("[data-i]").forEach(function (n) { n.textContent = T(n.dataset.i); });
     $("lang-en").setAttribute("aria-pressed", LANG === "en" ? "true" : "false"); $("lang-ta").setAttribute("aria-pressed", LANG === "ta" ? "true" : "false");
     renderStartOpts(); renderEventFilter(); renderEvents(); buildSuggest(); fillZoneSelect($("g-zone"), "f_allzones"); fillZoneSelect($("sp-zone"), "f_allzones");
-    var o = $("g-net").firstChild; o.textContent = T("f_both"); renderGroups(); renderSpots(); renderLearn();
+    var o = $("g-net").firstChild; o.textContent = T("f_both"); renderGroups(); renderSpots(); renderLearn(); renderToday();
   }
   function setLang(l) { LANG = l; try { localStorage.setItem("rc-lang", l); } catch (e) {} applyLang(); }
   $("lang-en").addEventListener("click", function () { setLang("en"); });
@@ -514,7 +545,7 @@ __LEARN__
   $("l-deep").addEventListener("click", function () { lTrack = "deep"; renderLearn(); });
   try { if (localStorage.getItem("rc-nav") === "1") $("nav").hidden = false; } catch (e) {}
   if (!$("nav").hidden) $("browse").hidden = true;
-  applyLang(); route(); loadSpots();
+  applyLang(); route(); loadSpots(); loadToday();
   window.RunChennai = { GROUPS: GROUPS, EVENTS: EVENTS };
 })();
 </script>
