@@ -146,7 +146,6 @@ html { color-scheme: light; }
     <button type="button" data-tab="groups" data-i="nav_groups">Groups</button>
     <button type="button" data-tab="spots" data-i="nav_spots">Spots</button>
     <button type="button" data-tab="learn" data-i="nav_learn">Learn</button>
-    <button type="button" data-tab="stories" data-i="nav_stories">Stories</button>
   </nav>
 
   <!-- START -->
@@ -162,23 +161,6 @@ html { color-scheme: light; }
     </div>
     <div class="actions"><button class="chip" id="browse" type="button" data-i="browse">Already a runner? Browse everything</button></div>
     <div class="res view" id="res" hidden aria-live="polite"></div>
-  </section>
-
-  <!-- STORIES -->
-  <section class="view" id="v-stories" hidden>
-    <h2 class="big" data-i="st_title">Runner stories</h2>
-    <p class="lede" style="font-size:16px" data-i="st_lede">Real people, real starts. Read one, then take your first step.</p>
-    <div class="card stack">
-      <p class="meta" data-i="st_by">From the runner who built this site</p>
-      <h3 class="qtitle" data-i="st_h">Gauthamraj, Chennai: sub-2:00 half marathon and sub-5:00 marathon</h3>
-      <p data-i="st_p">Two long reads on what it took, in his own words.</p>
-      <div class="actions">
-        <a class="chip" target="_blank" rel="noopener" href="https://gauthamrajelango.medium.com/the-anatomy-of-a-sub-5-marathon-6-shifts-that-turned-42-2-km-into-a-masterclass-in-life-d602e8633cff" data-i="st_a1">The anatomy of a sub-5 marathon: 6 shifts</a>
-        <a class="chip" target="_blank" rel="noopener" href="https://gauthamrajelango.medium.com/why-it-took-a-1-hour-setback-to-break-a-10-year-old-record-9a3fcc940589" data-i="st_a2">Why it took a 1-hour setback to break a 10-year-old record</a>
-      </div>
-      <p class="meta" data-i="st_en">These articles are in English.</p>
-    </div>
-    <div class="card"><p class="meta" data-i="st_more">More stories from Chennai runners are coming. Want to share yours? Tell us in the Groups tab suggestion form, or ask your running group.</p></div>
   </section>
 
   <!-- EVENTS -->
@@ -305,7 +287,6 @@ html { color-scheme: light; }
   var I = {
     en: {
       today_t: "Today's best time to run", today_more: "Hour-by-hour heat guide", today_none: "No calm window left today. Try tomorrow's first light.", today_lv: ["Good conditions","Run with care","Hard conditions","Heat warning: skip or go indoors"],
-      nav_stories: "Stories", st_title: "Runner stories", st_lede: "Real people, real starts. Read one, then take your first step.", st_by: "From the runner who built this site", st_h: "Gauthamraj, Chennai: sub-2:00 half marathon and sub-5:00 marathon", st_p: "Two long reads on what it took, in his own words.", st_a1: "The anatomy of a sub-5 marathon: 6 shifts", st_a2: "Why it took a 1-hour setback to break a 10-year-old record", st_en: "These articles are in English.", st_more: "More stories from Chennai runners are coming. Want to share yours? Tell us in the Groups tab suggestion form, or ask your running group.",
       eyebrow: "Chennai · by runners, for runners", tag: "Your first 90 days of running, in one place.",
       nav_start: "Start here", nav_events: "Events", nav_groups: "Groups", nav_spots: "Spots", nav_learn: "Learn",
       s_title: "Your first run, planned.", s_lede: "Three quick questions. We'll give you four small steps.",
@@ -331,7 +312,6 @@ html { color-scheme: light; }
     ta: {
       eyebrow: "சென்னை · ஓட்டக்காரர்களால், ஓட்டக்காரர்களுக்காக", tag: "ஓட்டத்தின் முதல் 90 நாட்கள், ஒரே இடத்தில்.",
       today_t: "இன்று ஓட சிறந்த நேரம்", today_more: "மணி வாரியான வெப்ப வழிகாட்டி", today_none: "இன்று அமைதியான நேரம் இல்லை. நாளை அதிகாலையை முயலுங்கள்.", today_lv: ["நல்ல சூழல்","கவனத்துடன் ஓடுங்கள்","கடினமான சூழல்","வெப்ப எச்சரிக்கை: ஓட வேண்டாம் அல்லது உள்ளரங்கில்"],
-      nav_stories: "கதைகள்", st_title: "ஓட்டக்காரர்களின் கதைகள்", st_lede: "உண்மையான மனிதர்கள், உண்மையான தொடக்கங்கள். ஒன்றைப் படியுங்கள், பிறகு உங்கள் முதல் அடியை எடுத்து வையுங்கள்.", st_by: "இந்தத் தளத்தை உருவாக்கிய ஓட்டக்காரரிடமிருந்து", st_h: "கௌதமராஜ், சென்னை: 2 மணிக்குள் அரை மாரத்தான், 5 மணிக்குள் மாரத்தான்", st_p: "அதற்கு என்ன தேவைப்பட்டது என்பது பற்றி அவரது சொந்த வார்த்தைகளில் இரண்டு நீண்ட கட்டுரைகள்.", st_a1: "The anatomy of a sub-5 marathon: 6 shifts", st_a2: "Why it took a 1-hour setback to break a 10-year-old record", st_en: "இந்தக் கட்டுரைகள் ஆங்கிலத்தில் உள்ளன.", st_more: "சென்னை ஓட்டக்காரர்களின் மேலும் கதைகள் விரைவில். உங்கள் கதையைப் பகிர வேண்டுமா? குழுக்கள் பகுதியில் உள்ள பரிந்துரைப் படிவத்தில் சொல்லுங்கள், அல்லது உங்கள் ஓட்டக் குழுவிடம் கேளுங்கள்.",
       nav_start: "இங்கே தொடங்குங்கள்", nav_events: "நிகழ்வுகள்", nav_groups: "குழுக்கள்", nav_spots: "ஓடும் இடங்கள்", nav_learn: "கற்றுக்கொள்ள",
       s_title: "உங்கள் முதல் ஓட்டம், திட்டமிடப்பட்டது.", s_lede: "மூன்று சிறு கேள்விகள். உங்களுக்கு நான்கு சிறிய படிகள் தருகிறோம்.",
       q_where: "நீங்கள் எந்தப் பகுதியில் வசிக்கிறீர்கள்?", q_when: "எப்போது ஓட முடியும்?", q_goal: "உங்கள் இலக்கு என்ன?", go: "என் பாதையைக் காட்டு",
@@ -576,7 +556,7 @@ html { color-scheme: light; }
   }
 
   /* ---------- router ---------- */
-  var TABS = ["start", "events", "groups", "spots", "learn", "stories"], cur = "start";
+  var TABS = ["start", "events", "groups", "spots", "learn"], cur = "start";
   function showTab(which) { if (location.hash.replace("#", "") !== which) location.hash = which; else route(); }
   function route() {
     var h = location.hash.replace("#", ""); cur = TABS.indexOf(h) >= 0 ? h : "start";
