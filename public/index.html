@@ -733,7 +733,7 @@ html { color-scheme: light; }
   var STYPES = ["Park", "Beach / promenade", "Stadium / track", "Road loop", "Campus / trail", "Other"];
   var AMEN = [["water", "Drinking water"], ["shade", "Shade"], ["lights", "Lit before dawn"], ["toilets", "Toilets"], ["safe", "Feels safe early"]];
   var WHEN = [["dawn", "Before 6 am"], ["morning", "6 to 9 am"], ["evening", "Evening"], ["night", "After dark"]];
-  var dbSpots = [], reviews = [], apiOk = false, openSpot = {}, must = {}, drafts = {};
+  var dbSpots = [], reviews = [], apiOk = false, openSpot = {}, must = {}, drafts = {}, justAdded = null;
   var rid = null;
   try { rid = localStorage.getItem("rc-rid"); if (!rid) { rid = "r" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("rc-rid", rid); } } catch (e) { rid = "r" + Math.random().toString(36).slice(2) + Date.now().toString(36); }
   function allSpots() { return SEED.concat(dbSpots); }
@@ -751,7 +751,7 @@ html { color-scheme: light; }
     var rows = allSpots().map(function (s) { return { s: s, a: agg(s) }; }).filter(function (r) {
       if (zone && r.s.zone !== zone) return false; if (type && r.s.kind !== type) return false;
       for (var k in must) if (must[k] && amState(r.a, k) !== "y") return false; return true; });
-    rows.sort(function (x, y) { return (y.a.n ? 1 : 0) - (x.a.n ? 1 : 0) || y.a.avg - x.a.avg || y.a.n - x.a.n; });
+    rows.sort(function (x, y) { return (y.s.id === justAdded ? 1 : 0) - (x.s.id === justAdded ? 1 : 0) || (y.a.n ? 1 : 0) - (x.a.n ? 1 : 0) || y.a.avg - x.a.avg || y.a.n - x.a.n; });
     $("sp-count").textContent = rows.length + (rows.length === 1 ? " spot" : " spots");
     var list = $("sp-list"); list.textContent = "";
     if (!rows.length) list.appendChild(el("p", "empty", T("r_none_s")));
@@ -760,6 +760,7 @@ html { color-scheme: light; }
   }
   function spotCard(sp, a) {
     var c = el("article", "card"), head = el("div", "head"), left = el("div");
+    if (sp.id === justAdded) left.appendChild(el("p", "meta", "✓ Just added by you"));
     left.appendChild(el("h3", "", sp.name)); left.appendChild(el("p", "meta", [sp.area, zoneLabel(sp.zone), sp.kind, sp.km ? sp.km + " km loop" : ""].filter(Boolean).join(" · "))); head.appendChild(left);
     var sc = el("div", "score", a.n ? a.avg.toFixed(1) : "-"); sc.appendChild(el("small", "", a.n ? " / 5 · " + a.n + (a.n === 1 ? " rating" : " ratings") : " unrated")); head.appendChild(sc); c.appendChild(head);
     var tags = el("div", "tags"); AMEN.forEach(function (m) { var st = amState(a, m[0]); tags.appendChild(el("span", "tag " + (st === "?" ? "" : st), m[1] + (st === "?" ? " ?" : st === "y" ? " ✓ " + a.y[m[0]] + "/" + a.n : " ✗ " + a.y[m[0]] + "/" + a.n))); }); c.appendChild(tags);
@@ -839,7 +840,7 @@ html { color-scheme: light; }
       if (nm.length < 3 || ar.length < 2 || !zone.value) { say(msg, "Add a name, an area and the part of the city.", true); return; }
       if (allSpots().some(function (s) { return s.name.toLowerCase() === nm.toLowerCase() && s.area.toLowerCase() === ar.toLowerCase(); })) { say(msg, "That spot is already listed. Find it below and rate it.", true); return; }
       var body = { type: "spot", name: nm, area: ar, zone: zone.value, kind: kind.value, note: note.value, hp: hp.value }; if (km.value) body.km = +km.value; if (draftPin) { body.lat = draftPin[0]; body.lng = draftPin[1]; }
-      save.disabled = true; post(body).then(function () { f.hidden = true; placing = false; if (draftMarker && map) map.removeLayer(draftMarker); draftPin = null; draftMarker = null; loadSpots(); }, function (m) { save.disabled = false; say(msg, m, true); });
+      save.disabled = true; post(body).then(function (j) { f.hidden = true; placing = false; if (draftMarker && map) map.removeLayer(draftMarker); draftPin = null; draftMarker = null; justAdded = j && j.spot ? j.spot.id : null; $("sp-zone").value = ""; $("sp-type").value = ""; qa("#v-spots button.chip[aria-pressed=true]").forEach(function (b) { b.click(); }); loadSpots().then(function () { if (apiOk) { say($("sp-status"), "Saved. Your spot is at the top of the list.", true); $("sp-status").scrollIntoView({ behavior: "smooth", block: "center" }); } }); }, function (m) { save.disabled = false; say(msg, m, true); });
     });
     act.appendChild(save); act.appendChild(cancel); f.appendChild(act); f.appendChild(msg);
   }
