@@ -12,7 +12,12 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 __CSS__
+[hidden] { display: none !important; }
 html { color-scheme: light; }
+.stepno { font-family: var(--display); font-weight: 800; }
+.sumline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.qtitle { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 7vw, 40px); line-height: 1.05; margin: 0; }
+.opts.stack .chip { width: 100%; min-height: 52px; font-size: 16px; }
 .brand { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .lang { display: flex; gap: 6px; }
 .lang button { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 8px 10px; min-height: 40px; }
@@ -44,7 +49,7 @@ html { color-scheme: light; }
     <div class="lang" role="group" aria-label="Language"><button type="button" id="lang-en" aria-pressed="true">EN</button><button type="button" id="lang-ta" aria-pressed="false">தமிழ்</button></div>
   </header>
 
-  <nav class="nav" aria-label="Sections">
+  <nav class="nav" id="nav" aria-label="Sections" hidden>
     <button type="button" data-tab="start" data-i="nav_start">Start here</button>
     <button type="button" data-tab="events" data-i="nav_events">Events</button>
     <button type="button" data-tab="groups" data-i="nav_groups">Groups</button>
@@ -55,14 +60,14 @@ html { color-scheme: light; }
   <!-- START -->
   <section class="view" id="v-start">
     <h2 class="big" data-i="s_title">Your first run, planned.</h2>
-    <p class="lede" style="font-size:16px" data-i="s_lede">Answer three questions. Get a plan, a group near you, a place to run and your first event.</p>
+    <p class="lede" style="font-size:16px" data-i="s_lede">Three quick questions. We'll give you four small steps.</p>
     <div class="card" id="q">
-      <div class="qblock"><p class="q" data-i="q_where">Where do you live?</p><div class="opts" id="o-zone"></div></div>
-      <div class="qblock"><p class="q" data-i="q_when">When can you run?</p><div class="opts" id="o-time"></div></div>
-      <div class="qblock"><p class="q" data-i="q_goal">What's your goal?</p><div class="opts" id="o-goal"></div></div>
-      <div class="actions"><button class="btn" id="go" type="button" data-i="go">Show my path</button></div>
-      <p class="msg" id="q-msg" hidden></p>
+      <p class="meta" id="q-step"></p>
+      <h3 class="qtitle" id="q-title"></h3>
+      <div class="opts stack" id="q-opts"></div>
+      <div class="actions"><button class="btn ghost" id="q-back" type="button" data-i="back" hidden>Back</button></div>
     </div>
+    <div class="actions"><button class="chip" id="browse" type="button" data-i="browse">Already a runner? Browse everything</button></div>
     <div class="res view" id="res" hidden aria-live="polite"></div>
   </section>
 
@@ -143,11 +148,11 @@ __GROUPS__
 
   /* ---------- events data (checked 1 Nov 2026) ---------- */
   var EVENTS = [
-    { name: "Chennai Juniorthon 2026 (5th edition)", date: "2026-11-15", dists: "Kids' runs", km: [], venue: "SDAT Nehru Park, Chetpet", fee: "from ₹599", tag: "kids", url: "https://runnersduniya.com/event/chennai-juniorthon/", src: "runnersduniya.com" },
-    { name: "Chennai Half Marathon 2026", date: "2026-11-29", dists: "5K, 10K, 21.1K", km: [5, 10, 21], venue: "Island Grounds, Park Town", fee: "5K from ₹1,000", url: "https://nebsports.in/chennai-half-marathon/", src: "organiser (NEB Sports)" },
-    { name: "Run for Our National Heroes 2026", date: "2026-12-13", dists: "3K, 5K, 10K, 16K", km: [3, 5, 10, 16], venue: "Olcott Memorial School, Besant Nagar", fee: "3K from ₹649", note: "One listing shows 12 Dec. Confirm the date.", url: "https://runnersduniya.com/event/run-for-our-national-heroes/", src: "runnersduniya.com" },
+    { name: "Chennai Juniorthon 2026 (5th edition)", date: "2026-11-15", dists: "Kids' runs, 50 m to 800 m", km: [], venue: "SDAT Nehru Park, Chetpet (from 7:30 am)", fee: "₹599 per child", tag: "kids", note: "For children from under 3 to 16 years, by age group.", url: "https://runnersduniya.com/event/chennai-juniorthon/", src: "runnersduniya.com" },
+    { name: "Chennai Half Marathon 2026", date: "2026-11-29", dists: "5K, 10K, 21.1K", km: [5, 10, 21], venue: "Island Grounds, Park Town (per listing; the organiser page does not name a venue yet)", fee: "5K listed at ₹1,000", dists2: "", note: "Organiser page lists 5K fun run, 10K and 21K. Check the organiser for fees and venue.", url: "https://nebsports.in/chennai-half-marathon/", src: "organiser (NEB Sports)" },
+    { name: "Run for Our National Heroes 2026", date: "2026-12-13", dists: "3K, 5K, 10K, 16K", km: [3, 5, 10, 16], venue: "Olcott Memorial School, Besant Nagar", fee: "3K ₹649, 5K ₹749, 10K ₹849, 16K ₹949", note: "Sunday 13 Dec, reporting from 5:30 am. Organiser: Gagner Sports.", url: "https://runnersduniya.com/event/run-for-our-national-heroes/", src: "runnersduniya.com" },
     { name: "Freshworks Chennai Marathon 2027", date: "2027-01-03", dists: "10K, 21.1K, 32K, 42.2K", km: [10, 21, 32, 42], venue: "Napier Bridge / Elliot's Beach (by distance)", fee: "Not yet announced", note: "Date and registration should be confirmed on the official site. Minimum age 16 for the 10K.", url: "https://thechennaimarathon.com", src: "fatmarathoner.com" },
-    { name: "World Women's Day Run, Namma Chennai 2027", date: "2027-03-21", dists: "3K, 5K, 10K", km: [3, 5, 10], venue: "Besant Nagar Beach", fee: "3K from ₹599", url: "https://runnersduniya.com/event/world-womens-day-run-namma-chennai/", src: "runnersduniya.com" },
+    { name: "World Women's Day Run, Namma Chennai 2027", date: "2027-03-21", dists: "3K fun run, 5K, 10K", km: [3, 5, 10], venue: "Besant Nagar Beach (from 5:30 am)", fee: "3K ₹599, 5K ₹699, 10K ₹799", note: "Open to women and men. The organiser says it suits beginners and experienced runners. Includes T-shirt, medal and refreshments.", url: "https://runnersduniya.com/event/world-womens-day-run-namma-chennai/", src: "runnersduniya.com" },
     { name: "Hexaware Dream Runners Half Marathon", date: "2027-07", dateLabel: "July 2027 (date to be announced)", dists: "10K, 21.1K", km: [10, 21], venue: "Napier Bridge to Island Grounds (2026 route)", fee: "Not yet announced", note: "The 2026 race was on 19 July. July is hot and humid, so expect slower times.", url: "https://dreamrunners.in/race-day/", src: "dreamrunners.in" }
   ];
 
@@ -156,12 +161,12 @@ __GROUPS__
     en: {
       eyebrow: "Chennai · by runners, for runners", tag: "Your first 90 days of running, in one place.",
       nav_start: "Start here", nav_events: "Events", nav_groups: "Groups", nav_spots: "Spots", nav_learn: "Learn",
-      s_title: "Your first run, planned.", s_lede: "Answer three questions. Get a plan, a group near you, a place to run and your first event.",
+      s_title: "Your first run, planned.", s_lede: "Three quick questions. We'll give you four small steps.",
       q_where: "Where do you live?", q_when: "When can you run?", q_goal: "What's your goal?", go: "Show my path",
       z_north: "North (Ambattur, Avadi, Anna Nagar, Mogappair)", z_central: "Central (T.Nagar, Nungambakkam, Ashok Nagar, Kilpauk)", z_coast: "Coast (Marina, Mylapore, Adyar, Besant Nagar, Thiruvanmiyur)", z_sw: "South-west (Velachery, Medavakkam, Tambaram, Chromepet, airport side)", z_omr: "OMR / ECR", z_west: "West (Porur)",
       t_dawn: "Before 6 am", t_morning: "6 to 9 am", t_evening: "Evening or after dark",
       gl_zero: "I'm just starting", gl_5k: "Run my first 5K", gl_10k: "10K or longer",
-      q_missing: "Pick one option in each question.",
+      q_missing: "Pick one option in each question.", back: "Back", browse: "Already a runner? Browse everything", q_of: "Question", st_1: "This week", st_2: "Find your people", st_3: "Pick a place", st_4: "Set a date", more: "Show more", yourpath: "Your path", change: "Change my answers", s_lede2: "Four small steps, in order. Do step 1 this week.",
       r_plan: "Your plan", r_groups: "Groups near you", r_spots: "Places to run", r_events: "Your first events", r_time: "About your running time", r_again: "Start over",
       r_none_g: "No group listed in this part of the city yet. Try the Groups tab to see them all.", r_none_s: "No spots here yet. Add the one you use.", r_none_e: "No upcoming event matches yet.",
       plan_zero: "Start with the 8-week walk-run plan. Three short sessions a week. By week 8 you run 30 minutes non-stop.", plan_5k: "Do the 8-week walk-run plan first, then pick a 5K from the events below. If you can already jog 20 minutes, start from week 5.", plan_10k: "Build a steady base first: run easy for 30 to 40 minutes comfortably. Then use the Go deeper track for training structure and pacing.",
@@ -179,12 +184,12 @@ __GROUPS__
     ta: {
       eyebrow: "சென்னை · ஓட்டக்காரர்களால், ஓட்டக்காரர்களுக்காக", tag: "ஓட்டத்தின் முதல் 90 நாட்கள், ஒரே இடத்தில்.",
       nav_start: "இங்கே தொடங்குங்கள்", nav_events: "நிகழ்வுகள்", nav_groups: "குழுக்கள்", nav_spots: "ஓடும் இடங்கள்", nav_learn: "கற்றுக்கொள்ள",
-      s_title: "உங்கள் முதல் ஓட்டம், திட்டமிடப்பட்டது.", s_lede: "மூன்று கேள்விகளுக்குப் பதில் சொல்லுங்கள். உங்களுக்கான திட்டம், அருகிலுள்ள குழு, ஓடும் இடம், முதல் நிகழ்வு கிடைக்கும்.",
+      s_title: "உங்கள் முதல் ஓட்டம், திட்டமிடப்பட்டது.", s_lede: "மூன்று சிறு கேள்விகள். உங்களுக்கு நான்கு சிறிய படிகள் தருகிறோம்.",
       q_where: "நீங்கள் எந்தப் பகுதியில் வசிக்கிறீர்கள்?", q_when: "எப்போது ஓட முடியும்?", q_goal: "உங்கள் இலக்கு என்ன?", go: "என் பாதையைக் காட்டு",
       z_north: "வடக்கு (அம்பத்தூர், ஆவடி, அண்ணா நகர், மொகப்பேர்)", z_central: "மத்திய சென்னை (தி.நகர், நுங்கம்பாக்கம், அசோக் நகர், கீழ்ப்பாக்கம்)", z_coast: "கடற்கரைப் பகுதி (மெரினா, மயிலாப்பூர், அடையாறு, பெசன்ட் நகர், திருவான்மியூர்)", z_sw: "தென்மேற்கு (வேளச்சேரி, மேடவாக்கம், தாம்பரம், குரோம்பேட்டை, விமான நிலையப் பகுதி)", z_omr: "OMR / ECR", z_west: "மேற்கு (போரூர்)",
       t_dawn: "அதிகாலை 6 மணிக்கு முன்", t_morning: "காலை 6 முதல் 9 வரை", t_evening: "மாலை அல்லது இருட்டிய பின்",
       gl_zero: "இப்போதுதான் தொடங்குகிறேன்", gl_5k: "என் முதல் 5K ஓட வேண்டும்", gl_10k: "10K அல்லது அதற்கு மேல்",
-      q_missing: "ஒவ்வொரு கேள்விக்கும் ஒரு விருப்பத்தைத் தேர்ந்தெடுங்கள்.",
+      q_missing: "ஒவ்வொரு கேள்விக்கும் ஒரு விருப்பத்தைத் தேர்ந்தெடுங்கள்.", back: "பின்செல்", browse: "ஏற்கனவே ஓடுகிறீர்களா? எல்லாவற்றையும் பாருங்கள்", q_of: "கேள்வி", st_1: "இந்த வாரம்", st_2: "உங்கள் ஓட்டத் தோழர்களைக் கண்டுபிடியுங்கள்", st_3: "ஓடும் இடத்தைத் தேர்ந்தெடுங்கள்", st_4: "ஒரு தேதியை நிர்ணயுங்கள்", more: "மேலும் காட்டு", yourpath: "உங்கள் பாதை", change: "என் பதில்களை மாற்று", s_lede2: "நான்கு சிறிய படிகள், வரிசைப்படி. இந்த வாரம் படி 1-ஐச் செய்யுங்கள்.",
       r_plan: "உங்கள் திட்டம்", r_groups: "உங்கள் அருகிலுள்ள குழுக்கள்", r_spots: "ஓடுவதற்கான இடங்கள்", r_events: "உங்கள் முதல் நிகழ்வுகள்", r_time: "உங்கள் ஓட்ட நேரம் பற்றி", r_again: "மீண்டும் தொடங்கு",
       r_none_g: "இந்தப் பகுதியில் இன்னும் குழு பட்டியலிடப்படவில்லை. எல்லாக் குழுக்களையும் காண குழுக்கள் பகுதியைப் பாருங்கள்.", r_none_s: "இங்கே இன்னும் இடங்கள் இல்லை. நீங்கள் ஓடும் இடத்தைச் சேர்க்கலாம்.", r_none_e: "பொருத்தமான நிகழ்வுகள் இன்னும் இல்லை.",
       plan_zero: "8 வார நடை-ஓட்டத் திட்டத்தில் தொடங்குங்கள். வாரத்துக்கு மூன்று குறுகிய பயிற்சிகள். 8-ஆம் வாரத்தில் 30 நிமிடம் இடைவிடாமல் ஓடுவீர்கள்.", plan_5k: "முதலில் 8 வார நடை-ஓட்டத் திட்டத்தைச் செய்யுங்கள். பிறகு கீழே உள்ள நிகழ்வுகளில் ஒரு 5K தேர்ந்தெடுங்கள். ஏற்கனவே 20 நிமிடம் மெதுவாக ஓட முடிந்தால் 5-ஆம் வாரத்திலிருந்து தொடங்கலாம்.", plan_10k: "முதலில் நிலையான அடித்தளம் அமையுங்கள்: 30 முதல் 40 நிமிடம் எளிதாக ஓடுங்கள். பிறகு பயிற்சி முறை மற்றும் வேகத்துக்கு ஆழமாகக் கற்க பகுதியைப் பயன்படுத்துங்கள்.",
@@ -215,6 +220,7 @@ __LEARN__
     var h = location.hash.replace("#", ""); cur = TABS.indexOf(h) >= 0 ? h : "start";
     TABS.forEach(function (t) { $("v-" + t).hidden = t !== cur; });
     qa(".nav button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tab === cur ? "true" : "false"); });
+    if (cur !== "start") revealNav();
     if (cur === "spots") setTimeout(mapReady, 0);
   }
   qa(".nav button").forEach(function (b) { b.addEventListener("click", function () { showTab(b.dataset.tab); window.scrollTo(0, 0); }); });
@@ -222,60 +228,75 @@ __LEARN__
 
   /* ---------- start flow ---------- */
   var pick = { zone: "", time: "", goal: "" };
-  function opts(containerId, key, list) {
-    var c = $(containerId); c.textContent = "";
-    list.forEach(function (o) {
-      var b = el("button", "chip", T(o[1])); b.type = "button"; b.setAttribute("aria-pressed", pick[key] === o[0] ? "true" : "false");
-      b.addEventListener("click", function () { pick[key] = o[0]; opts(containerId, key, list); });
-      c.appendChild(b);
-    });
-  }
+  try { var sp = JSON.parse(localStorage.getItem("rc-pick") || "null"); if (sp && sp.zone && sp.time && sp.goal) pick = sp; } catch (e) {}
   var TIMES = [["dawn", "t_dawn"], ["morning", "t_morning"], ["evening", "t_evening"]];
   var GOALS = [["zero", "gl_zero"], ["5k", "gl_5k"], ["10k", "gl_10k"]];
-  function renderStartOpts() { opts("o-zone", "zone", ZONES); opts("o-time", "time", TIMES); opts("o-goal", "goal", GOALS); }
+  var QS = [["zone", "q_where", ZONES], ["time", "q_when", TIMES], ["goal", "q_goal", GOALS]], qi = 0;
+  function done() { return !!(pick.zone && pick.time && pick.goal); }
+  function savePick() { try { localStorage.setItem("rc-pick", JSON.stringify(pick)); } catch (e) {} }
+  function revealNav() { $("nav").hidden = false; $("browse").hidden = true; try { localStorage.setItem("rc-nav", "1"); } catch (e) {} }
   function upcoming() { var now = new Date(); var ym = now.getFullYear() * 100 + now.getMonth() + 1; var d0 = now.toISOString().slice(0, 10);
     return EVENTS.filter(function (e) { return e.date.length > 7 ? e.date >= d0 : (+e.date.slice(0, 4) * 100 + +e.date.slice(5, 7)) >= ym; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
   function fmtDate(e) { if (e.dateLabel) return e.dateLabel; var d = new Date(e.date + "T00:00:00"); return d.toLocaleDateString(LANG === "ta" ? "ta-IN" : "en-IN", { day: "numeric", month: "short", year: "numeric" }); }
   function heatOf(e) { var m = +e.date.slice(5, 7); return m === 12 || m === 1 || m === 2 ? "h_cool" : m === 11 ? "h_mild" : m === 3 || m === 4 || m === 10 ? "h_warm" : "h_hot"; }
   function days(g) { return g.days && g.days.length ? g.days.join(", ") : ""; }
-  function section(title) { var d = el("div", "card"); d.appendChild(el("h2", "", title)); return d; }
+  function stepCard(n, title) { var d = el("div", "card"); var h = el("h2", "", n + ". " + title); d.appendChild(h); return d; }
   function linkBtn(text, fn) { var b = el("button", "btn ghost", text); b.type = "button"; b.addEventListener("click", fn); return b; }
   function miniGroup(g) { var m = el("div", "mini"); m.appendChild(el("strong", "", g.name)); m.appendChild(el("span", "meta", g.net + " · " + g.area)); m.appendChild(el("span", "", T("meets") + ": " + g.where)); if (days(g)) m.appendChild(el("span", "meta", days(g))); var a = el("a", "link", T("official")); a.href = g.url; a.target = "_blank"; a.rel = "noopener noreferrer"; m.appendChild(a); return m; }
   function miniEvent(e) { var m = el("div", "mini"); m.appendChild(el("strong", "", e.name)); m.appendChild(el("span", "meta", fmtDate(e) + " · " + e.dists)); m.appendChild(el("span", "", e.venue)); var a = el("a", "link", T("register")); a.href = e.url; a.target = "_blank"; a.rel = "noopener noreferrer"; m.appendChild(a); return m; }
-  function showPath() {
-    var m = $("q-msg");
-    if (!pick.zone || !pick.time || !pick.goal) { say(m, T("q_missing"), true); return; }
-    say(m, "", false);
+  function miniSpot(x) { var mm = el("div", "mini"); mm.appendChild(el("strong", "", x.s.name)); mm.appendChild(el("span", "meta", x.s.area + " · " + x.s.kind + (x.a.n ? " · " + x.a.avg.toFixed(1) + "/5" : ""))); return mm; }
+  // Shows the first item, with a button that reveals up to three more.
+  function listWithMore(card, items, build, emptyKey) {
+    if (!items.length) { card.appendChild(el("p", "empty", T(emptyKey))); return; }
+    var box = el("div", "view"); box.style.gap = "10px"; card.appendChild(box); box.appendChild(build(items[0]));
+    if (items.length > 1) { var b = linkBtn(T("more"), function () { items.slice(1, 4).forEach(function (i) { box.appendChild(build(i)); }); b.remove(); }); card.appendChild(b); }
+  }
+  function renderStartOpts() {
+    if (done()) { $("q").hidden = true; showPath(true); return; }
+    $("q").hidden = false; $("res").hidden = true;
+    var q = QS[qi]; $("q-step").textContent = T("q_of") + " " + (qi + 1) + " / 3"; $("q-title").textContent = T(q[1]);
+    var c = $("q-opts"); c.textContent = "";
+    q[2].forEach(function (o) {
+      var b = el("button", "chip", T(o[1])); b.type = "button"; b.setAttribute("aria-pressed", pick[q[0]] === o[0] ? "true" : "false");
+      b.addEventListener("click", function () { pick[q[0]] = o[0]; if (qi < 2) { qi++; renderStartOpts(); } else { savePick(); renderStartOpts(); window.scrollTo(0, 0); } });
+      c.appendChild(b);
+    });
+    $("q-back").hidden = qi === 0;
+  }
+  $("q-back").addEventListener("click", function () { if (qi > 0) { qi--; renderStartOpts(); } });
+  $("browse").addEventListener("click", revealNav);
+  function showPath(quiet) {
+    if (!done()) return;
+    revealNav();
     var r = $("res"); r.textContent = ""; r.hidden = false;
-    var p = section(T("r_plan")); p.appendChild(el("p", "", T(pick.goal === "zero" ? "plan_zero" : pick.goal === "5k" ? "plan_5k" : "plan_10k")));
-    p.appendChild(el("h3", "meta", T("r_time").toUpperCase())); p.appendChild(el("p", "", T("time_" + pick.time)));
-    var ac = el("div", "actions");
-    ac.appendChild(linkBtn(T(pick.goal === "10k" ? "open_deep" : "open_plan"), function () { lTrack = pick.goal === "10k" ? "deep" : "start"; renderLearn(); showTab("learn"); window.scrollTo(0, 0); }));
-    p.appendChild(ac); r.appendChild(p);
+    var head = el("div", "sumline"); var sm = el("div"); sm.appendChild(el("p", "q", T("yourpath")));
+    sm.appendChild(el("p", "meta", zoneLabel(pick.zone) + " · " + T(labelKey(TIMES, pick.time)) + " · " + T(labelKey(GOALS, pick.goal)))); head.appendChild(sm);
+    head.appendChild(linkBtn(T("change"), function () { pick = { zone: "", time: "", goal: "" }; qi = 0; try { localStorage.removeItem("rc-pick"); } catch (e) {} renderStartOpts(); window.scrollTo(0, 0); }));
+    r.appendChild(head); r.appendChild(el("p", "lede", T("s_lede2")));
 
-    var gs = GROUPS.filter(function (g) { return g.zone === pick.zone; });
-    var gc = section(T("r_groups")); if (!gs.length) gc.appendChild(el("p", "empty", T("r_none_g")));
-    gs.slice(0, 4).forEach(function (g) { gc.appendChild(miniGroup(g)); });
-    gc.appendChild(linkBtn(T("see_groups"), function () { $("g-zone").value = pick.zone; renderGroups(); showTab("groups"); window.scrollTo(0, 0); }));
-    r.appendChild(gc);
+    var p = stepCard(1, T("st_1")); p.appendChild(el("p", "", T(pick.goal === "zero" ? "plan_zero" : pick.goal === "5k" ? "plan_5k" : "plan_10k")));
+    p.appendChild(el("p", "meta", T("time_" + pick.time)));
+    var ac = el("div", "actions"); ac.appendChild(el("span")); ac.removeChild(ac.firstChild);
+    var openBtn = el("button", "btn", T(pick.goal === "10k" ? "open_deep" : "open_plan")); openBtn.type = "button";
+    openBtn.addEventListener("click", function () { lTrack = pick.goal === "10k" ? "deep" : "start"; renderLearn(); showTab("learn"); window.scrollTo(0, 0); });
+    ac.appendChild(openBtn); p.appendChild(ac); r.appendChild(p);
 
-    var sc = section(T("r_spots")); var ss = allSpots().filter(function (s) { return s.zone === pick.zone; }).map(function (s) { return { s: s, a: agg(s) }; }).sort(function (a, b) { return b.a.avg - a.a.avg; }).slice(0, 3);
-    if (!ss.length) sc.appendChild(el("p", "empty", T("r_none_s")));
-    ss.forEach(function (x) { var mm = el("div", "mini"); mm.appendChild(el("strong", "", x.s.name)); mm.appendChild(el("span", "meta", x.s.area + " · " + x.s.kind + (x.a.n ? " · " + x.a.avg.toFixed(1) + "/5" : ""))); sc.appendChild(mm); });
-    sc.appendChild(linkBtn(T("see_spots"), function () { $("sp-zone").value = pick.zone; renderSpots(); showTab("spots"); window.scrollTo(0, 0); }));
-    r.appendChild(sc);
+    var gs = GROUPS.filter(function (g) { return g.zone === pick.zone; }).sort(function (a, b) { return (b.days.length ? 1 : 0) - (a.days.length ? 1 : 0); });
+    var gc = stepCard(2, T("st_2")); listWithMore(gc, gs, miniGroup, "r_none_g");
+    gc.appendChild(linkBtn(T("see_groups"), function () { $("g-zone").value = pick.zone; renderGroups(); showTab("groups"); window.scrollTo(0, 0); })); r.appendChild(gc);
+
+    var ss = allSpots().filter(function (s) { return s.zone === pick.zone; }).map(function (s) { return { s: s, a: agg(s) }; }).sort(function (a, b) { return b.a.avg - a.a.avg; });
+    var sc = stepCard(3, T("st_3")); listWithMore(sc, ss, miniSpot, "r_none_s");
+    sc.appendChild(linkBtn(T("see_spots"), function () { $("sp-zone").value = pick.zone; renderSpots(); showTab("spots"); window.scrollTo(0, 0); })); r.appendChild(sc);
 
     var evs = upcoming().filter(function (e) { return pick.goal === "10k" ? e.km.some(function (k) { return k >= 10; }) : pick.goal === "5k" ? e.km.indexOf(5) >= 0 : e.km.some(function (k) { return k === 3 || k === 5; }); });
     if (!evs.length) evs = upcoming().filter(function (e) { return e.tag !== "kids"; });
-    var ec = section(T("r_events")); if (!evs.length) ec.appendChild(el("p", "empty", T("r_none_e")));
-    evs.slice(0, 3).forEach(function (e) { ec.appendChild(miniEvent(e)); });
-    ec.appendChild(linkBtn(T("see_events"), function () { showTab("events"); window.scrollTo(0, 0); }));
-    r.appendChild(ec);
-    var again = el("div", "actions"); again.appendChild(linkBtn(T("r_again"), function () { pick = { zone: "", time: "", goal: "" }; renderStartOpts(); r.hidden = true; window.scrollTo(0, 0); }));
-    r.appendChild(again);
-    r.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (pick.goal === "zero") evs = evs.slice().sort(function (x, y) { return (y.km.indexOf(3) >= 0 ? 1 : 0) - (x.km.indexOf(3) >= 0 ? 1 : 0); });
+    var ec = stepCard(4, T("st_4")); listWithMore(ec, evs, miniEvent, "r_none_e");
+    ec.appendChild(linkBtn(T("see_events"), function () { showTab("events"); window.scrollTo(0, 0); })); r.appendChild(ec);
+    if (!quiet) r.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  $("go").addEventListener("click", showPath);
+  function labelKey(list, k) { for (var i = 0; i < list.length; i++) if (list[i][0] === k) return list[i][1]; return ""; }
 
   /* ---------- events view ---------- */
   var evFilter = "all";
@@ -430,7 +451,7 @@ __LEARN__
   }
   function loadSpots() {
     return fetch("/api/spots").then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); }).then(function (j) {
-      apiOk = true; dbSpots = (j.spots || []).filter(function (s) { return s.name && s.zone; }); reviews = j.reviews || []; say($("sp-status"), "", false); renderSpots(); if (!$("sp-form").hidden) buildSpotForm();
+      apiOk = true; dbSpots = (j.spots || []).filter(function (s) { return s.name && s.zone; }); reviews = j.reviews || []; say($("sp-status"), "", false); renderSpots(); if (done()) showPath(true); if (!$("sp-form").hidden) buildSpotForm();
     }).catch(function () { apiOk = false; say($("sp-status"), "Community ratings are not switched on yet. The starter list below is read-only.", true); renderSpots(); });
   }
 
@@ -491,8 +512,10 @@ __LEARN__
   $("lang-ta").addEventListener("click", function () { setLang("ta"); });
   $("l-start").addEventListener("click", function () { lTrack = "start"; renderLearn(); });
   $("l-deep").addEventListener("click", function () { lTrack = "deep"; renderLearn(); });
+  try { if (localStorage.getItem("rc-nav") === "1") $("nav").hidden = false; } catch (e) {}
+  if (!$("nav").hidden) $("browse").hidden = true;
   applyLang(); route(); loadSpots();
-  window.RunChennai = { GROUPS: GROUPS, EVENTS: EVENTS, pick: pick, showPath: showPath };
+  window.RunChennai = { GROUPS: GROUPS, EVENTS: EVENTS };
 })();
 </script>
 </body>

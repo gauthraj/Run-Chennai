@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Run Chennai</title>
+<meta name="description" content="Start running in Chennai: a plan, a group near you, places to run, and your first event.">
+<meta property="og:title" content="Run Chennai">
+<meta property="og:description" content="Your first 90 days of running in Chennai, in one place: a plan, a group near you, places to run, and your first event.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@500&family=Public+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+__CSS__
+[hidden] { display: none !important; }
+html { color-scheme: light; }
+.stepno { font-family: var(--display); font-weight: 800; }
+.sumline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.qtitle { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 7vw, 40px); line-height: 1.05; margin: 0; }
+.opts.stack .chip { width: 100%; min-height: 52px; font-size: 16px; }
+.brand { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.lang { display: flex; gap: 6px; }
+.lang button { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 8px 10px; min-height: 40px; }
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; position: sticky; top: 0; background: var(--bg); z-index: 5; padding-top: 6px; }
+.nav button { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .04em; text-transform: uppercase; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 8px 16px; min-height: 46px; cursor: pointer; }
+.nav button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.big { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 8vw, 54px); line-height: 1; margin: 0; text-transform: uppercase; text-wrap: balance; }
+.opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.opts .chip { text-align: left; border-radius: 10px; font-family: var(--body); font-size: 15px; letter-spacing: 0; }
+.qblock { display: flex; flex-direction: column; gap: 8px; }
+.res h2 { margin-top: 6px; }
+.mini { display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); min-width: 0; }
+.mini strong { overflow-wrap: anywhere; }
+.badge { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; border-radius: 6px; padding: 3px 8px; background: var(--yes-bg); color: var(--yes); }
+.badge.k { background: var(--warn-bg); color: var(--warn-fg); }
+#map { height: 320px; border-radius: 12px; border: 1px solid var(--line); z-index: 0; }
+.footer { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <div>
+      <p class="eyebrow" data-i="eyebrow">Chennai · by runners, for runners</p>
+      <h1>Run Chennai</h1>
+      <p class="lede" data-i="tag">Your first 90 days of running, in one place.</p>
+    </div>
+    <div class="lang" role="group" aria-label="Language"><button type="button" id="lang-en" aria-pressed="true">EN</button><button type="button" id="lang-ta" aria-pressed="false">தமிழ்</button></div>
+  </header>
+
+  <nav class="nav" id="nav" aria-label="Sections" hidden>
+    <button type="button" data-tab="start" data-i="nav_start">Start here</button>
+    <button type="button" data-tab="events" data-i="nav_events">Events</button>
+    <button type="button" data-tab="groups" data-i="nav_groups">Groups</button>
+    <button type="button" data-tab="spots" data-i="nav_spots">Spots</button>
+    <button type="button" data-tab="learn" data-i="nav_learn">Learn</button>
+  </nav>
+
+  <!-- START -->
+  <section class="view" id="v-start">
+    <h2 class="big" data-i="s_title">Your first run, planned.</h2>
+    <p class="lede" style="font-size:16px" data-i="s_lede">Three quick questions. We'll give you four small steps.</p>
+    <div class="card" id="q">
+      <p class="meta" id="q-step"></p>
+      <h3 class="qtitle" id="q-title"></h3>
+      <div class="opts stack" id="q-opts"></div>
+      <div class="actions"><button class="btn ghost" id="q-back" type="button" data-i="back" hidden>Back</button></div>
+    </div>
+    <div class="actions"><button class="chip" id="browse" type="button" data-i="browse">Already a runner? Browse everything</button></div>
+    <div class="res view" id="res" hidden aria-live="polite"></div>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="view" id="v-events" hidden>
+    <h2 class="big" data-i="ev_title">Upcoming events</h2>
+    <p class="lede" style="font-size:16px" data-i="ev_lede">Start with a 3K or 5K. A date on the calendar is what turns a plan into a habit.</p>
+    <div class="filters"><div class="row"><label class="f"><span data-i="ev_show">Show</span><select id="ev-f"></select></label></div></div>
+    <span class="count" id="ev-count"></span>
+    <div class="list" id="ev-list"></div>
+    <details class="topic"><summary data-i="sug_title">Know an event or group we're missing?</summary>
+      <div class="topic-in" id="sug"></div>
+    </details>
+    <p class="src" data-i="ev_note">Checked on 1 Nov 2026 against organiser and listing pages. Dates, fees and venues change, so confirm on the organiser's page before you register.</p>
+  </section>
+
+  <!-- GROUPS -->
+  <section class="view" id="v-groups" hidden>
+    <h2 class="big" data-i="g_title">Running groups</h2>
+    <p class="lede" style="font-size:16px" data-i="g_lede">Free group runs across Chennai, from the Chennai Runners and Dream Runners chapters. Turn up on a run day.</p>
+    <section class="filters"><div class="row">
+      <label class="f"><span data-i="f_net">Network</span><select id="g-net"><option value="" data-i="f_both">Both networks</option></select></label>
+      <label class="f"><span data-i="f_zone">Part of the city</span><select id="g-zone"></select></label>
+      <label class="f"><span data-i="f_day">Runs on</span><select id="g-day"><option value="" data-i="f_anyday">Any day</option><option value="Sun">Sunday</option><option value="Sat">Saturday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option></select></label>
+    </div></section>
+    <span class="count" id="g-count"></span>
+    <div class="list" id="g-list"></div>
+    <p class="src" data-i="g_note">Copied from each chapter's public page on 1 Nov 2026. Times and venues change, so confirm with the chapter before you go. Contact numbers are on the official pages. Not affiliated with either network.</p>
+  </section>
+
+  <!-- SPOTS -->
+  <section class="view" id="v-spots" hidden>
+    <h2 class="big" data-i="sp_title">Places to run</h2>
+    <p class="lede" style="font-size:16px" data-i="sp_lede">Runners rate the places they run: water, shade, lights, toilets, and whether it feels safe early.</p>
+    <p class="msg" id="sp-status" hidden></p>
+    <div id="map" role="application" aria-label="Map of run spots" hidden></div>
+    <section class="filters"><div class="row">
+      <label class="f"><span data-i="f_zone">Part of the city</span><select id="sp-zone"></select></label>
+      <label class="f"><span data-i="f_type">Type</span><select id="sp-type"></select></label>
+    </div><div class="row" id="sp-chips" role="group" aria-label="Must have"></div></section>
+    <div class="row" style="justify-content:space-between"><span class="count" id="sp-count"></span><button class="btn" id="sp-add" type="button" data-i="sp_add">Add a spot</button></div>
+    <section class="card" id="sp-form" hidden></section>
+    <div class="list" id="sp-list" aria-live="polite"></div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="view" id="v-learn" hidden>
+    <div class="tabs" role="group" aria-label="Track"><button type="button" id="l-start" aria-pressed="true">I'm starting out</button><button type="button" id="l-deep" aria-pressed="false">Go deeper</button></div>
+    <p class="lede" id="l-intro" style="font-size:16px"></p>
+    <p class="src" data-i="learn_en">This section is in English for now.</p>
+    <div class="list" id="l-body"></div>
+    <p class="src">General information for healthy adults, not medical advice. If something hurts or worries you, see a doctor or physio.</p>
+  </section>
+
+  <footer class="footer">
+    <p data-i="foot">Built by runners. Information is community-supplied and checked by hand; please confirm details before you travel.</p>
+  </footer>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function say(node, text, show) { node.textContent = text || ""; node.hidden = !show; }
+  function qa(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+  /* ---------- groups data (copied 1 Nov 2026) ---------- */
+__GROUPS__
+  var GZONE = {
+    "Pettai Rappers": "coast", "Ambattur Arimass": "north", "Tower Twisters": "north", "Pillar Pacers": "central", "Bessie Flyers": "coast",
+    "Chromepet Cheetahs": "sw", "Kilpauk Striders": "central", "Marina Minnals": "coast", "Mogappair Fitness Circle": "north", "Nungambakkam Nitros": "central",
+    "OMR Trail Blazers": "omr", "Porur Racers": "west", "T.Nagar Trendsetters": "central", "Tambaram Thunderbolts": "sw", "Coastal Runners": "coast", "Vibrant Velachery": "sw",
+    "Airport Dreamers": "sw", "Anna Nagar Dreamers": "north", "Avadi Dreamers": "north", "Bessie Dreamers": "coast", "Boat Club Dreamers": "coast", "Marina Dreamers": "coast",
+    "Medavakkam Dreamers": "sw", "MRC Dreamers": "coast", "OMR Dreamers": "omr", "Run T-Nagar Run": "central", "Velachery Dreamers": "sw", "VMR Dreamers": "sw", "Tambaram Dreamers": "sw"
+  };
+  GROUPS.forEach(function (g) { g.zone = GZONE[g.name] || "central"; });
+
+  /* ---------- events data (checked 1 Nov 2026) ---------- */
+  var EVENTS = [
+    { name: "Chennai Juniorthon 2026 (5th edition)", date: "2026-11-15", dists: "Kids' runs, 50 m to 800 m", km: [], venue: "SDAT Nehru Park, Chetpet (from 7:30 am)", fee: "₹599 per child", tag: "kids", note: "For children from under 3 to 16 years, by age group.", url: "https://runnersduniya.com/event/chennai-juniorthon/", src: "runnersduniya.com" },
+    { name: "Chennai Half Marathon 2026", date: "2026-11-29", dists: "5K, 10K, 21.1K", km: [5, 10, 21], venue: "Island Grounds, Park Town (per listing; the organiser page does not name a venue yet)", fee: "5K listed at ₹1,000", dists2: "", note: "Organiser page lists 5K fun run, 10K and 21K. Check the organiser for fees and venue.", url: "https://nebsports.in/chennai-half-marathon/", src: "organiser (NEB Sports)" },
+    { name: "Run for Our National Heroes 2026", date: "2026-12-13", dists: "3K, 5K, 10K, 16K", km: [3, 5, 10, 16], venue: "Olcott Memorial School, Besant Nagar", fee: "3K ₹649, 5K ₹749, 10K ₹849, 16K ₹949", note: "Sunday 13 Dec, reporting from 5:30 am. Organiser: Gagner Sports.", url: "https://runnersduniya.com/event/run-for-our-national-heroes/", src: "runnersduniya.com" },
+    { name: "Freshworks Chennai Marathon 2027", date: "2027-01-03", dists: "10K, 21.1K, 32K, 42.2K", km: [10, 21, 32, 42], venue: "Napier Bridge / Elliot's Beach (by distance)", fee: "Not yet announced", note: "Date and registration should be confirmed on the official site. Minimum age 16 for the 10K.", url: "https://thechennaimarathon.com", src: "fatmarathoner.com" },
+    { name: "World Women's Day Run, Namma Chennai 2027", date: "2027-03-21", dists: "3K fun run, 5K, 10K", km: [3, 5, 10], venue: "Besant Nagar Beach (from 5:30 am)", fee: "3K ₹599, 5K ₹699, 10K ₹799", note: "Open to women and men. The organiser says it suits beginners and experienced runners. Includes T-shirt, medal and refreshments.", url: "https://runnersduniya.com/event/world-womens-day-run-namma-chennai/", src: "runnersduniya.com" },
+    { name: "Hexaware Dream Runners Half Marathon", date: "2027-07", dateLabel: "July 2027 (date to be announced)", dists: "10K, 21.1K", km: [10, 21], venue: "Napier Bridge to Island Grounds (2026 route)", fee: "Not yet announced", note: "The 2026 race was on 19 July. July is hot and humid, so expect slower times.", url: "https://dreamrunners.in/race-day/", src: "dreamrunners.in" }
+  ];
+
+  /* ---------- i18n ---------- */
+  var I = {
+    en: {
+      eyebrow: "Chennai · by runners, for runners", tag: "Your first 90 days of running, in one place.",
+      nav_start: "Start here", nav_events: "Events", nav_groups: "Groups", nav_spots: "Spots", nav_learn: "Learn",
+      s_title: "Your first run, planned.", s_lede: "Three quick questions. We'll give you four small steps.",
+      q_where: "Where do you live?", q_when: "When can you run?", q_goal: "What's your goal?", go: "Show my path",
+      z_north: "North (Ambattur, Avadi, Anna Nagar, Mogappair)", z_central: "Central (T.Nagar, Nungambakkam, Ashok Nagar, Kilpauk)", z_coast: "Coast (Marina, Mylapore, Adyar, Besant Nagar, Thiruvanmiyur)", z_sw: "South-west (Velachery, Medavakkam, Tambaram, Chromepet, airport side)", z_omr: "OMR / ECR", z_west: "West (Porur)",
+      t_dawn: "Before 6 am", t_morning: "6 to 9 am", t_evening: "Evening or after dark",
+      gl_zero: "I'm just starting", gl_5k: "Run my first 5K", gl_10k: "10K or longer",
+      q_missing: "Pick one option in each question.", back: "Back", browse: "Already a runner? Browse everything", q_of: "Question", st_1: "This week", st_2: "Find your people", st_3: "Pick a place", st_4: "Set a date", more: "Show more", yourpath: "Your path", change: "Change my answers", s_lede2: "Four small steps, in order. Do step 1 this week.",
+      r_plan: "Your plan", r_groups: "Groups near you", r_spots: "Places to run", r_events: "Your first events", r_time: "About your running time", r_again: "Start over",
+      r_none_g: "No group listed in this part of the city yet. Try the Groups tab to see them all.", r_none_s: "No spots here yet. Add the one you use.", r_none_e: "No upcoming event matches yet.",
+      plan_zero: "Start with the 8-week walk-run plan. Three short sessions a week. By week 8 you run 30 minutes non-stop.", plan_5k: "Do the 8-week walk-run plan first, then pick a 5K from the events below. If you can already jog 20 minutes, start from week 5.", plan_10k: "Build a steady base first: run easy for 30 to 40 minutes comfortably. Then use the Go deeper track for training structure and pacing.",
+      open_plan: "Open the plan", open_deep: "Open Go deeper", see_groups: "See all groups", see_events: "See all events", see_spots: "See all spots",
+      time_dawn: "Early mornings are the coolest but humid. In one Chennai runner's data, runs before 6 am averaged about 83% humidity. Go with a group, wear something reflective, and start slowly.", time_morning: "The sun gets strong quickly after 7 am. Pick a shaded route, carry water, and keep the run easy.", time_evening: "Evenings are the hottest part of the day here. Slow down, drink often, and choose lit, busy routes after dark.",
+      ev_title: "Upcoming events", ev_lede: "Start with a 3K or 5K. A date on the calendar is what turns a plan into a habit.", ev_show: "Show", ev_all: "All events", ev_first: "Good for first-timers (3K or 5K)", ev_long: "10K and longer", ev_kids: "Kids and families",
+      ev_note: "Checked on 1 Nov 2026 against organiser and listing pages. Dates, fees and venues change, so confirm on the organiser's page before you register.",
+      ev_none: "No event matches that filter.", register: "Event page", badge_first: "3K / 5K available", badge_kids: "Kids", where: "Where", fee: "Fee", heat: "Typical heat", h_cool: "Cooler season", h_mild: "Mild", h_warm: "Warming up", h_hot: "Hot and humid",
+      sug_title: "Know an event or group we're missing?", sug_name: "Name", sug_link: "Link (optional)", sug_note: "Anything else", sug_send: "Send suggestion", sug_ok: "Thanks. We'll check it before listing.", sug_err: "Couldn't send right now. Try again later.",
+      g_title: "Running groups", g_lede: "Free group runs across Chennai, from the Chennai Runners and Dream Runners chapters. Turn up on a run day.", g_note: "Copied from each chapter's public page on 1 Nov 2026. Times and venues change, so confirm with the chapter before you go. Contact numbers are on the official pages. Not affiliated with either network.",
+      f_net: "Network", f_both: "Both networks", f_zone: "Part of the city", f_allzones: "Whole city", f_day: "Runs on", f_anyday: "Any day", f_type: "Type", f_anytype: "Any type", meets: "Meets at", official: "Official page", maps: "Open in Maps",
+      sp_title: "Places to run", sp_lede: "Runners rate the places they run: water, shade, lights, toilets, and whether it feels safe early.", sp_add: "Add a spot",
+      learn_en: "This section is in English for now.", foot: "Built by runners. Information is community-supplied and checked by hand; please confirm details before you travel."
+    },
+    ta: {
+      eyebrow: "சென்னை · ஓட்டக்காரர்களால், ஓட்டக்காரர்களுக்காக", tag: "ஓட்டத்தின் முதல் 90 நாட்கள், ஒரே இடத்தில்.",
+      nav_start: "இங்கே தொடங்குங்கள்", nav_events: "நிகழ்வுகள்", nav_groups: "குழுக்கள்", nav_spots: "ஓடும் இடங்கள்", nav_learn: "கற்றுக்கொள்ள",
+      s_title: "உங்கள் முதல் ஓட்டம், திட்டமிடப்பட்டது.", s_lede: "மூன்று சிறு கேள்விகள். உங்களுக்கு நான்கு சிறிய படிகள் தருகிறோம்.",
+      q_where: "நீங்கள் எந்தப் பகுதியில் வசிக்கிறீர்கள்?", q_when: "எப்போது ஓட முடியும்?", q_goal: "உங்கள் இலக்கு என்ன?", go: "என் பாதையைக் காட்டு",
+      z_north: "வடக்கு (அம்பத்தூர், ஆவடி, அண்ணா நகர், மொகப்பேர்)", z_central: "மத்திய சென்னை (தி.நகர், நுங்கம்பாக்கம், அசோக் நகர், கீழ்ப்பாக்கம்)", z_coast: "கடற்கரைப் பகுதி (மெரினா, மயிலாப்பூர், அடையாறு, பெசன்ட் நகர், திருவான்மியூர்)", z_sw: "தென்மேற்கு (வேளச்சேரி, மேடவாக்கம், தாம்பரம், குரோம்பேட்டை, விமான நிலையப் பகுதி)", z_omr: "OMR / ECR", z_west: "மேற்கு (போரூர்)",
+      t_dawn: "அதிகாலை 6 மணிக்கு முன்", t_morning: "காலை 6 முதல் 9 வரை", t_evening: "மாலை அல்லது இருட்டிய பின்",
+      gl_zero: "இப்போதுதான் தொடங்குகிறேன்", gl_5k: "என் முதல் 5K ஓட வேண்டும்", gl_10k: "10K அல்லது அதற்கு மேல்",
+      q_missing: "ஒவ்வொரு கேள்விக்கும் ஒரு விருப்பத்தைத் தேர்ந்தெடுங்கள்.", back: "பின்செல்", browse: "ஏற்கனவே ஓடுகிறீர்களா? எல்லாவற்றையும் பாருங்கள்", q_of: "கேள்வி", st_1: "இந்த வாரம்", st_2: "உங்கள் ஓட்டத் தோழர்களைக் கண்டுபிடியுங்கள்", st_3: "ஓடும் இடத்தைத் தேர்ந்தெடுங்கள்", st_4: "ஒரு தேதியை நிர்ணயுங்கள்", more: "மேலும் காட்டு", yourpath: "உங்கள் பாதை", change: "என் பதில்களை மாற்று", s_lede2: "நான்கு சிறிய படிகள், வரிசைப்படி. இந்த வாரம் படி 1-ஐச் செய்யுங்கள்.",
+      r_plan: "உங்கள் திட்டம்", r_groups: "உங்கள் அருகிலுள்ள குழுக்கள்", r_spots: "ஓடுவதற்கான இடங்கள்", r_events: "உங்கள் முதல் நிகழ்வுகள்", r_time: "உங்கள் ஓட்ட நேரம் பற்றி", r_again: "மீண்டும் தொடங்கு",
+      r_none_g: "இந்தப் பகுதியில் இன்னும் குழு பட்டியலிடப்படவில்லை. எல்லாக் குழுக்களையும் காண குழுக்கள் பகுதியைப் பாருங்கள்.", r_none_s: "இங்கே இன்னும் இடங்கள் இல்லை. நீங்கள் ஓடும் இடத்தைச் சேர்க்கலாம்.", r_none_e: "பொருத்தமான நிகழ்வுகள் இன்னும் இல்லை.",
+      plan_zero: "8 வார நடை-ஓட்டத் திட்டத்தில் தொடங்குங்கள். வாரத்துக்கு மூன்று குறுகிய பயிற்சிகள். 8-ஆம் வாரத்தில் 30 நிமிடம் இடைவிடாமல் ஓடுவீர்கள்.", plan_5k: "முதலில் 8 வார நடை-ஓட்டத் திட்டத்தைச் செய்யுங்கள். பிறகு கீழே உள்ள நிகழ்வுகளில் ஒரு 5K தேர்ந்தெடுங்கள். ஏற்கனவே 20 நிமிடம் மெதுவாக ஓட முடிந்தால் 5-ஆம் வாரத்திலிருந்து தொடங்கலாம்.", plan_10k: "முதலில் நிலையான அடித்தளம் அமையுங்கள்: 30 முதல் 40 நிமிடம் எளிதாக ஓடுங்கள். பிறகு பயிற்சி முறை மற்றும் வேகத்துக்கு ஆழமாகக் கற்க பகுதியைப் பயன்படுத்துங்கள்.",
+      open_plan: "திட்டத்தைத் திற", open_deep: "ஆழமாகக் கற்க பகுதியைத் திற", see_groups: "எல்லாக் குழுக்களும்", see_events: "எல்லா நிகழ்வுகளும்", see_spots: "எல்லா இடங்களும்",
+      time_dawn: "அதிகாலை மிகக் குளிர்ச்சியானது, ஆனால் ஈரப்பதம் அதிகம். ஒரு சென்னை ஓட்டக்காரரின் தரவில், காலை 6 மணிக்கு முந்தைய ஓட்டங்களில் ஈரப்பதம் சராசரியாக சுமார் 83%. குழுவுடன் செல்லுங்கள், ஒளிரும் உடை அணியுங்கள், மெதுவாகத் தொடங்குங்கள்.", time_morning: "காலை 7 மணிக்குப் பிறகு வெயில் விரைவாக அதிகரிக்கும். நிழலான பாதையைத் தேர்ந்தெடுங்கள், தண்ணீர் எடுத்துச் செல்லுங்கள், எளிதாக ஓடுங்கள்.", time_evening: "இங்கே மாலை நேரமே மிகவும் சூடானது. மெதுவாக ஓடுங்கள், அடிக்கடி தண்ணீர் குடியுங்கள், இருட்டிய பின் வெளிச்சமும் மக்கள் நடமாட்டமும் உள்ள பாதையைத் தேர்ந்தெடுங்கள்.",
+      ev_title: "வரவிருக்கும் நிகழ்வுகள்", ev_lede: "3K அல்லது 5K-வில் தொடங்குங்கள். நாட்காட்டியில் ஒரு தேதி இருந்தால் திட்டம் பழக்கமாகும்.", ev_show: "காட்டு", ev_all: "எல்லா நிகழ்வுகளும்", ev_first: "முதல் முறை ஓடுவோருக்கு ஏற்றது (3K அல்லது 5K)", ev_long: "10K மற்றும் அதற்கு மேல்", ev_kids: "குழந்தைகள் மற்றும் குடும்பங்கள்",
+      ev_note: "2026 நவம்பர் 1 அன்று ஏற்பாட்டாளர் மற்றும் பட்டியல் பக்கங்களுடன் சரிபார்க்கப்பட்டது. தேதி, கட்டணம், இடம் மாறலாம்; பதிவு செய்வதற்கு முன் ஏற்பாட்டாளர் பக்கத்தில் உறுதிசெய்யுங்கள்.",
+      ev_none: "அந்த வடிகட்டலுக்குப் பொருந்தும் நிகழ்வு இல்லை.", register: "நிகழ்வுப் பக்கம்", badge_first: "3K / 5K உண்டு", badge_kids: "குழந்தைகள்", where: "இடம்", fee: "கட்டணம்", heat: "வழக்கமான வெப்பம்", h_cool: "குளிர்ச்சியான பருவம்", h_mild: "மிதமானது", h_warm: "வெப்பம் அதிகரிக்கிறது", h_hot: "சூடும் ஈரப்பதமும் அதிகம்",
+      sug_title: "நாங்கள் தவறவிட்ட நிகழ்வு அல்லது குழு தெரியுமா?", sug_name: "பெயர்", sug_link: "இணைப்பு (விருப்பம்)", sug_note: "மற்றவை", sug_send: "பரிந்துரையை அனுப்பு", sug_ok: "நன்றி. பட்டியலிடும் முன் சரிபார்ப்போம்.", sug_err: "இப்போது அனுப்ப முடியவில்லை. பிறகு முயலுங்கள்.",
+      g_title: "ஓட்டக் குழுக்கள்", g_lede: "சென்னை முழுவதும் இலவசக் குழு ஓட்டங்கள், Chennai Runners மற்றும் Dream Runners பிரிவுகளிலிருந்து. ஓட்ட நாளில் நேரில் வாருங்கள்.", g_note: "2026 நவம்பர் 1 அன்று ஒவ்வொரு பிரிவின் பொதுப் பக்கத்திலிருந்து எடுக்கப்பட்டது. நேரமும் இடமும் மாறலாம்; செல்லும் முன் குழுவிடம் உறுதிசெய்யுங்கள். தொடர்பு எண்கள் அதிகாரப்பூர்வப் பக்கங்களில் உள்ளன. இரு அமைப்புகளுடனும் தொடர்பு இல்லை.",
+      f_net: "அமைப்பு", f_both: "இரண்டும்", f_zone: "நகரின் பகுதி", f_allzones: "முழு நகரம்", f_day: "ஓடும் நாள்", f_anyday: "எந்த நாளும்", f_type: "வகை", f_anytype: "எந்த வகையும்", meets: "சந்திக்கும் இடம்", official: "அதிகாரப்பூர்வப் பக்கம்", maps: "வரைபடத்தில் திற",
+      sp_title: "ஓடுவதற்கான இடங்கள்", sp_lede: "ஓட்டக்காரர்கள் தாங்கள் ஓடும் இடங்களை மதிப்பிடுகிறார்கள்: தண்ணீர், நிழல், விளக்கு, கழிப்பறை, அதிகாலையில் பாதுகாப்பாக உணர்கிறதா என்பது.", sp_add: "இடத்தைச் சேர்",
+      learn_en: "இந்தப் பகுதி தற்போது ஆங்கிலத்தில் மட்டும் உள்ளது.", foot: "ஓட்டக்காரர்களால் உருவாக்கப்பட்டது. தகவல்கள் சமூகத்தால் வழங்கப்பட்டு கையால் சரிபார்க்கப்படுகின்றன; பயணம் செய்யும் முன் உறுதிசெய்யுங்கள்."
+    }
+  };
+  var LANG = "en";
+  try { var sv = localStorage.getItem("rc-lang"); if (sv === "ta" || sv === "en") LANG = sv; } catch (e) {}
+  function T(k) { return (I[LANG] && I[LANG][k]) || I.en[k] || k; }
+  var ZONES = [["north", "z_north"], ["central", "z_central"], ["coast", "z_coast"], ["sw", "z_sw"], ["omr", "z_omr"], ["west", "z_west"]];
+  function zoneLabel(z) { for (var i = 0; i < ZONES.length; i++) if (ZONES[i][0] === z) return T(ZONES[i][1]).split(" (")[0]; return z; }
+
+__LEARN__
+
+  /* ---------- router ---------- */
+  var TABS = ["start", "events", "groups", "spots", "learn"], cur = "start";
+  function showTab(which) { if (location.hash.replace("#", "") !== which) location.hash = which; else route(); }
+  function route() {
+    var h = location.hash.replace("#", ""); cur = TABS.indexOf(h) >= 0 ? h : "start";
+    TABS.forEach(function (t) { $("v-" + t).hidden = t !== cur; });
+    qa(".nav button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tab === cur ? "true" : "false"); });
+    if (cur !== "start") revealNav();
+    if (cur === "spots") setTimeout(mapReady, 0);
+  }
+  qa(".nav button").forEach(function (b) { b.addEventListener("click", function () { showTab(b.dataset.tab); window.scrollTo(0, 0); }); });
+  window.addEventListener("hashchange", route);
+
+  /* ---------- start flow ---------- */
+  var pick = { zone: "", time: "", goal: "" };
+  try { var sp = JSON.parse(localStorage.getItem("rc-pick") || "null"); if (sp && sp.zone && sp.time && sp.goal) pick = sp; } catch (e) {}
+  var TIMES = [["dawn", "t_dawn"], ["morning", "t_morning"], ["evening", "t_evening"]];
+  var GOALS = [["zero", "gl_zero"], ["5k", "gl_5k"], ["10k", "gl_10k"]];
+  var QS = [["zone", "q_where", ZONES], ["time", "q_when", TIMES], ["goal", "q_goal", GOALS]], qi = 0;
+  function done() { return !!(pick.zone && pick.time && pick.goal); }
+  function savePick() { try { localStorage.setItem("rc-pick", JSON.stringify(pick)); } catch (e) {} }
+  function revealNav() { $("nav").hidden = false; $("browse").hidden = true; try { localStorage.setItem("rc-nav", "1"); } catch (e) {} }
+  function upcoming() { var now = new Date(); var ym = now.getFullYear() * 100 + now.getMonth() + 1; var d0 = now.toISOString().slice(0, 10);
+    return EVENTS.filter(function (e) { return e.date.length > 7 ? e.date >= d0 : (+e.date.slice(0, 4) * 100 + +e.date.slice(5, 7)) >= ym; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  function fmtDate(e) { if (e.dateLabel) return e.dateLabel; var d = new Date(e.date + "T00:00:00"); return d.toLocaleDateString(LANG === "ta" ? "ta-IN" : "en-IN", { day: "numeric", month: "short", year: "numeric" }); }
+  function heatOf(e) { var m = +e.date.slice(5, 7); return m === 12 || m === 1 || m === 2 ? "h_cool" : m === 11 ? "h_mild" : m === 3 || m === 4 || m === 10 ? "h_warm" : "h_hot"; }
+  function days(g) { return g.days && g.days.length ? g.days.join(", ") : ""; }
+  function stepCard(n, title) { var d = el("div", "card"); var h = el("h2", "", n + ". " + title); d.appendChild(h); return d; }
+  function linkBtn(text, fn) { var b = el("button", "btn ghost", text); b.type = "button"; b.addEventListener("click", fn); return b; }
+  function miniGroup(g) { var m = el("div", "mini"); m.appendChild(el("strong", "", g.name)); m.appendChild(el("span", "meta", g.net + " · " + g.area)); m.appendChild(el("span", "", T("meets") + ": " + g.where)); if (days(g)) m.appendChild(el("span", "meta", days(g))); var a = el("a", "link", T("official")); a.href = g.url; a.target = "_blank"; a.rel = "noopener noreferrer"; m.appendChild(a); return m; }
+  function miniEvent(e) { var m = el("div", "mini"); m.appendChild(el("strong", "", e.name)); m.appendChild(el("span", "meta", fmtDate(e) + " · " + e.dists)); m.appendChild(el("span", "", e.venue)); var a = el("a", "link", T("register")); a.href = e.url; a.target = "_blank"; a.rel = "noopener noreferrer"; m.appendChild(a); return m; }
+  function miniSpot(x) { var mm = el("div", "mini"); mm.appendChild(el("strong", "", x.s.name)); mm.appendChild(el("span", "meta", x.s.area + " · " + x.s.kind + (x.a.n ? " · " + x.a.avg.toFixed(1) + "/5" : ""))); return mm; }
+  // Shows the first item, with a button that reveals up to three more.
+  function listWithMore(card, items, build, emptyKey) {
+    if (!items.length) { card.appendChild(el("p", "empty", T(emptyKey))); return; }
+    var box = el("div", "view"); box.style.gap = "10px"; card.appendChild(box); box.appendChild(build(items[0]));
+    if (items.length > 1) { var b = linkBtn(T("more"), function () { items.slice(1, 4).forEach(function (i) { box.appendChild(build(i)); }); b.remove(); }); card.appendChild(b); }
+  }
+  function renderStartOpts() {
+    if (done()) { $("q").hidden = true; showPath(true); return; }
+    $("q").hidden = false; $("res").hidden = true;
+    var q = QS[qi]; $("q-step").textContent = T("q_of") + " " + (qi + 1) + " / 3"; $("q-title").textContent = T(q[1]);
+    var c = $("q-opts"); c.textContent = "";
+    q[2].forEach(function (o) {
+      var b = el("button", "chip", T(o[1])); b.type = "button"; b.setAttribute("aria-pressed", pick[q[0]] === o[0] ? "true" : "false");
+      b.addEventListener("click", function () { pick[q[0]] = o[0]; if (qi < 2) { qi++; renderStartOpts(); } else { savePick(); renderStartOpts(); window.scrollTo(0, 0); } });
+      c.appendChild(b);
+    });
+    $("q-back").hidden = qi === 0;
+  }
+  $("q-back").addEventListener("click", function () { if (qi > 0) { qi--; renderStartOpts(); } });
+  $("browse").addEventListener("click", revealNav);
+  function showPath(quiet) {
+    if (!done()) return;
+    revealNav();
+    var r = $("res"); r.textContent = ""; r.hidden = false;
+    var head = el("div", "sumline"); var sm = el("div"); sm.appendChild(el("p", "q", T("yourpath")));
+    sm.appendChild(el("p", "meta", zoneLabel(pick.zone) + " · " + T(labelKey(TIMES, pick.time)) + " · " + T(labelKey(GOALS, pick.goal)))); head.appendChild(sm);
+    head.appendChild(linkBtn(T("change"), function () { pick = { zone: "", time: "", goal: "" }; qi = 0; try { localStorage.removeItem("rc-pick"); } catch (e) {} renderStartOpts(); window.scrollTo(0, 0); }));
+    r.appendChild(head); r.appendChild(el("p", "lede", T("s_lede2")));
+
+    var p = stepCard(1, T("st_1")); p.appendChild(el("p", "", T(pick.goal === "zero" ? "plan_zero" : pick.goal === "5k" ? "plan_5k" : "plan_10k")));
+    p.appendChild(el("p", "meta", T("time_" + pick.time)));
+    var ac = el("div", "actions"); ac.appendChild(el("span")); ac.removeChild(ac.firstChild);
+    var openBtn = el("button", "btn", T(pick.goal === "10k" ? "open_deep" : "open_plan")); openBtn.type = "button";
+    openBtn.addEventListener("click", function () { lTrack = pick.goal === "10k" ? "deep" : "start"; renderLearn(); showTab("learn"); window.scrollTo(0, 0); });
+    ac.appendChild(openBtn); p.appendChild(ac); r.appendChild(p);
+
+    var gs = GROUPS.filter(function (g) { return g.zone === pick.zone; }).sort(function (a, b) { return (b.days.length ? 1 : 0) - (a.days.length ? 1 : 0); });
+    var gc = stepCard(2, T("st_2")); listWithMore(gc, gs, miniGroup, "r_none_g");
+    gc.appendChild(linkBtn(T("see_groups"), function () { $("g-zone").value = pick.zone; renderGroups(); showTab("groups"); window.scrollTo(0, 0); })); r.appendChild(gc);
+
+    var ss = allSpots().filter(function (s) { return s.zone === pick.zone; }).map(function (s) { return { s: s, a: agg(s) }; }).sort(function (a, b) { return b.a.avg - a.a.avg; });
+    var sc = stepCard(3, T("st_3")); listWithMore(sc, ss, miniSpot, "r_none_s");
+    sc.appendChild(linkBtn(T("see_spots"), function () { $("sp-zone").value = pick.zone; renderSpots(); showTab("spots"); window.scrollTo(0, 0); })); r.appendChild(sc);
+
+    var evs = upcoming().filter(function (e) { return pick.goal === "10k" ? e.km.some(function (k) { return k >= 10; }) : pick.goal === "5k" ? e.km.indexOf(5) >= 0 : e.km.some(function (k) { return k === 3 || k === 5; }); });
+    if (!evs.length) evs = upcoming().filter(function (e) { return e.tag !== "kids"; });
+    if (pick.goal === "zero") evs = evs.slice().sort(function (x, y) { return (y.km.indexOf(3) >= 0 ? 1 : 0) - (x.km.indexOf(3) >= 0 ? 1 : 0); });
+    var ec = stepCard(4, T("st_4")); listWithMore(ec, evs, miniEvent, "r_none_e");
+    ec.appendChild(linkBtn(T("see_events"), function () { showTab("events"); window.scrollTo(0, 0); })); r.appendChild(ec);
+    if (!quiet) r.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function labelKey(list, k) { for (var i = 0; i < list.length; i++) if (list[i][0] === k) return list[i][1]; return ""; }
+
+  /* ---------- events view ---------- */
+  var evFilter = "all";
+  function renderEventFilter() {
+    var s = $("ev-f"); s.textContent = "";
+    [["all", "ev_all"], ["first", "ev_first"], ["long", "ev_long"], ["kids", "ev_kids"]].forEach(function (o) { var op = el("option", "", T(o[1])); op.value = o[0]; s.appendChild(op); });
+    s.value = evFilter;
+  }
+  function renderEvents() {
+    var rows = upcoming().filter(function (e) {
+      if (evFilter === "first") return e.km.some(function (k) { return k === 3 || k === 5; });
+      if (evFilter === "long") return e.km.some(function (k) { return k >= 10; });
+      if (evFilter === "kids") return e.tag === "kids";
+      return true;
+    });
+    $("ev-count").textContent = rows.length + " " + (rows.length === 1 ? "event" : "events");
+    var list = $("ev-list"); list.textContent = "";
+    if (!rows.length) { list.appendChild(el("p", "empty", T("ev_none"))); return; }
+    rows.forEach(function (e) {
+      var c = el("article", "card");
+      c.appendChild(el("h3", "", e.name));
+      c.appendChild(el("p", "meta", fmtDate(e) + " · " + e.dists));
+      var b = el("div", "tags");
+      if (e.km.some(function (k) { return k === 3 || k === 5; })) b.appendChild(el("span", "badge", T("badge_first")));
+      if (e.tag === "kids") b.appendChild(el("span", "badge", T("badge_kids")));
+      b.appendChild(el("span", "badge k", T("heat") + ": " + T(heatOf(e))));
+      c.appendChild(b);
+      c.appendChild(el("p", "where", T("where") + ": " + e.venue));
+      c.appendChild(el("p", "where", T("fee") + ": " + e.fee));
+      if (e.note) c.appendChild(el("p", "msg", e.note));
+      var act = el("div", "actions"); var a = el("a", "btn sm", T("register")); a.href = e.url; a.target = "_blank"; a.rel = "noopener noreferrer"; act.appendChild(a); c.appendChild(act);
+      c.appendChild(el("p", "src", "Source: " + e.src));
+      list.appendChild(c);
+    });
+  }
+  $("ev-f").addEventListener("change", function () { evFilter = $("ev-f").value; renderEvents(); });
+
+  function buildSuggest() {
+    var box = $("sug"); box.textContent = "";
+    var name = el("input"); name.type = "text"; name.maxLength = 100; var link = el("input"); link.type = "text"; link.maxLength = 300; link.placeholder = "https://";
+    var note = el("textarea"); note.maxLength = 300; var hp = el("input", "hp"); hp.tabIndex = -1; hp.setAttribute("aria-hidden", "true"); hp.autocomplete = "off";
+    var kind = el("select"); [["event", "Event"], ["group", "Group"], ["other", "Other"]].forEach(function (k) { var o = el("option", "", k[1]); o.value = k[0]; kind.appendChild(o); });
+    function f(label, node) { var l = el("label", "f"); l.appendChild(document.createTextNode(label)); l.appendChild(node); return l; }
+    box.appendChild(f("Type", kind)); box.appendChild(f(T("sug_name"), name)); box.appendChild(f(T("sug_link"), link)); box.appendChild(f(T("sug_note"), note)); box.appendChild(hp);
+    var msg = el("p", "msg"); msg.hidden = true; var btn = el("button", "btn", T("sug_send")); btn.type = "button";
+    btn.addEventListener("click", function () {
+      if (name.value.trim().length < 3) return;
+      btn.disabled = true;
+      fetch("/api/suggest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: kind.value, name: name.value, link: link.value, note: note.value, hp: hp.value }) })
+        .then(function (r) { btn.disabled = false; if (r.ok) { say(msg, T("sug_ok"), true); name.value = link.value = note.value = ""; } else say(msg, T("sug_err"), true); })
+        .catch(function () { btn.disabled = false; say(msg, T("sug_err"), true); });
+    });
+    box.appendChild(btn); box.appendChild(msg);
+  }
+
+  /* ---------- groups view ---------- */
+  function fillZoneSelect(sel, allKey) { var cur = sel.value; sel.textContent = ""; var a = el("option", "", T(allKey)); a.value = ""; sel.appendChild(a); ZONES.forEach(function (z) { var o = el("option", "", T(z[1]).split(" (")[0]); o.value = z[0]; sel.appendChild(o); }); sel.value = cur; }
+  function renderGroups() {
+    var net = $("g-net").value, zone = $("g-zone").value, day = $("g-day").value;
+    var rows = GROUPS.filter(function (g) { return (!net || g.net === net) && (!zone || g.zone === zone) && (!day || g.days.indexOf(day) >= 0); });
+    $("g-count").textContent = rows.length + (rows.length === 1 ? " group" : " groups");
+    var list = $("g-list"); list.textContent = "";
+    if (!rows.length) { list.appendChild(el("p", "empty", T("r_none_g"))); return; }
+    rows.forEach(function (g) {
+      var c = el("article", "card");
+      var left = el("div"); left.appendChild(el("h3", "", g.name)); left.appendChild(el("p", "meta", g.net + " · " + g.area)); c.appendChild(left);
+      var w = el("p", "where"); w.appendChild(el("strong", "", T("meets") + ": ")); w.appendChild(document.createTextNode(g.where)); c.appendChild(w);
+      var ul = el("ul", "sched"); g.sched.forEach(function (s) { ul.appendChild(el("li", "", s)); }); c.appendChild(ul);
+      var act = el("div", "actions");
+      var a1 = el("a", "btn sm", T("official")); a1.href = g.url; a1.target = "_blank"; a1.rel = "noopener noreferrer"; act.appendChild(a1);
+      var a2 = el("a", "btn ghost sm", T("maps")); a2.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(g.where.split(";")[0].split("(")[0] + " " + g.area + " Chennai"); a2.target = "_blank"; a2.rel = "noopener noreferrer"; act.appendChild(a2);
+      c.appendChild(act); list.appendChild(c);
+    });
+  }
+  ["g-net", "g-day"].forEach(function (id) { $(id).addEventListener("change", renderGroups); });
+  $("g-zone").addEventListener("change", renderGroups);
+  [CR, DR].forEach(function (n) { var o = el("option", "", n); o.value = n; $("g-net").appendChild(o); });
+
+  /* ---------- spots ---------- */
+  var SEED = [
+    { id: "seed-marina", name: "Marina Beach promenade", area: "Marina", zone: "coast", kind: "Beach / promenade" },
+    { id: "seed-elliots", name: "Elliot's Beach", area: "Besant Nagar", zone: "coast", kind: "Beach / promenade" },
+    { id: "seed-adyar-poonga", name: "Adyar Poonga", area: "Adyar", zone: "coast", kind: "Park" },
+    { id: "seed-nehru-park", name: "Nehru Park", area: "Chetpet", zone: "central", kind: "Park" },
+    { id: "seed-semmozhi", name: "Semmozhi Poonga", area: "Teynampet", zone: "central", kind: "Park" },
+    { id: "seed-jln", name: "Jawaharlal Nehru Stadium", area: "Periamet", zone: "central", kind: "Stadium / track" }
+  ];
+  var STYPES = ["Park", "Beach / promenade", "Stadium / track", "Road loop", "Campus / trail", "Other"];
+  var AMEN = [["water", "Drinking water"], ["shade", "Shade"], ["lights", "Lit before dawn"], ["toilets", "Toilets"], ["safe", "Feels safe early"]];
+  var WHEN = [["dawn", "Before 6 am"], ["morning", "6 to 9 am"], ["evening", "Evening"], ["night", "After dark"]];
+  var dbSpots = [], reviews = [], apiOk = false, openSpot = {}, must = {}, drafts = {};
+  var rid = null;
+  try { rid = localStorage.getItem("rc-rid"); if (!rid) { rid = "r" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("rc-rid", rid); } } catch (e) { rid = "r" + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function allSpots() { return SEED.concat(dbSpots); }
+  function agg(s) { var rs = reviews.filter(function (r) { return r.spot === s.id; }), n = rs.length, sum = 0, y = {}; AMEN.forEach(function (a) { y[a[0]] = 0; });
+    rs.forEach(function (r) { sum += r.stars; AMEN.forEach(function (a) { if (r[a[0]]) y[a[0]]++; }); }); return { rs: rs, n: n, avg: n ? sum / n : 0, y: y }; }
+  function amState(a, k) { return !a.n ? "?" : a.y[k] * 2 >= a.n ? "y" : "n"; }
+  function labelOf(list, k) { for (var i = 0; i < list.length; i++) if (list[i][0] === k) return list[i][1]; return ""; }
+
+  AMEN.forEach(function (a) { var b = el("button", "chip", a[1]); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.addEventListener("click", function () { must[a[0]] = !must[a[0]]; b.setAttribute("aria-pressed", must[a[0]] ? "true" : "false"); renderSpots(); }); $("sp-chips").appendChild(b); });
+  STYPES.forEach(function (t) { var o = el("option", "", t); o.value = t; $("sp-type").appendChild(o); });
+  ["sp-zone", "sp-type"].forEach(function (id) { $(id).addEventListener("change", renderSpots); });
+
+  function renderSpots() {
+    var zone = $("sp-zone").value, type = $("sp-type").value;
+    var rows = allSpots().map(function (s) { return { s: s, a: agg(s) }; }).filter(function (r) {
+      if (zone && r.s.zone !== zone) return false; if (type && r.s.kind !== type) return false;
+      for (var k in must) if (must[k] && amState(r.a, k) !== "y") return false; return true; });
+    rows.sort(function (x, y) { return (y.a.n ? 1 : 0) - (x.a.n ? 1 : 0) || y.a.avg - x.a.avg || y.a.n - x.a.n; });
+    $("sp-count").textContent = rows.length + (rows.length === 1 ? " spot" : " spots");
+    var list = $("sp-list"); list.textContent = "";
+    if (!rows.length) list.appendChild(el("p", "empty", T("r_none_s")));
+    rows.forEach(function (r) { list.appendChild(spotCard(r.s, r.a)); });
+    drawMarkers();
+  }
+  function spotCard(sp, a) {
+    var c = el("article", "card"), head = el("div", "head"), left = el("div");
+    left.appendChild(el("h3", "", sp.name)); left.appendChild(el("p", "meta", [sp.area, zoneLabel(sp.zone), sp.kind, sp.km ? sp.km + " km loop" : ""].filter(Boolean).join(" · "))); head.appendChild(left);
+    var sc = el("div", "score", a.n ? a.avg.toFixed(1) : "-"); sc.appendChild(el("small", "", a.n ? " / 5 · " + a.n + (a.n === 1 ? " rating" : " ratings") : " unrated")); head.appendChild(sc); c.appendChild(head);
+    var tags = el("div", "tags"); AMEN.forEach(function (m) { var st = amState(a, m[0]); tags.appendChild(el("span", "tag " + (st === "?" ? "" : st), m[1] + (st === "?" ? " ?" : st === "y" ? " ✓ " + a.y[m[0]] + "/" + a.n : " ✗ " + a.y[m[0]] + "/" + a.n))); }); c.appendChild(tags);
+    if (sp.note) c.appendChild(el("p", "tip", sp.note));
+    a.rs.slice().sort(function (x, y) { return y.ts - x.ts; }).filter(function (r) { return r.tip; }).slice(0, openSpot[sp.id] ? 20 : 2).forEach(function (r) { var t = el("p", "tip", r.tip); t.appendChild(el("span", "meta", r.stars + "/5" + (r.when ? " · " + labelOf(WHEN, r.when) : ""))); c.appendChild(t); });
+    var act = el("div", "actions");
+    var rate = el("button", "btn", openSpot[sp.id] ? "Close" : "Rate this spot"); rate.type = "button"; rate.addEventListener("click", function () { openSpot[sp.id] = !openSpot[sp.id]; renderSpots(); }); act.appendChild(rate);
+    var m = el("a", "btn ghost sm", T("maps")); m.href = sp.lat ? "https://www.google.com/maps/search/?api=1&query=" + sp.lat + "," + sp.lng : "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(sp.name + " " + sp.area + " Chennai"); m.target = "_blank"; m.rel = "noopener noreferrer"; act.appendChild(m);
+    c.appendChild(act); if (openSpot[sp.id]) c.appendChild(reviewForm(sp)); return c;
+  }
+  function reviewForm(sp) {
+    var mine = null; reviews.forEach(function (r) { if (r.spot === sp.id && r.key === sp.id + ":" + rid) mine = r; });
+    var d = drafts[sp.id] || (drafts[sp.id] = mine ? { stars: mine.stars, when: mine.when || "", tip: mine.tip || "", checks: AMEN.reduce(function (o, a) { o[a[0]] = !!mine[a[0]]; return o; }, {}) } : { stars: 0, when: "", tip: "", checks: {} });
+    var p = el("div", "panel"); p.appendChild(el("p", "q", mine ? "Update your rating" : "Your rating"));
+    var stars = el("div", "stars"); [1, 2, 3, 4, 5].forEach(function (n) { var b = el("button", "", String(n)); b.type = "button"; b.setAttribute("aria-pressed", d.stars === n ? "true" : "false"); b.addEventListener("click", function () { d.stars = n; Array.prototype.forEach.call(stars.children, function (x, i) { x.setAttribute("aria-pressed", i + 1 === n ? "true" : "false"); }); }); stars.appendChild(b); }); p.appendChild(stars);
+    p.appendChild(el("p", "q", "What did you find there?")); var ch = el("div", "checks");
+    AMEN.forEach(function (a) { var b = el("button", "chip", a[1]); b.type = "button"; b.setAttribute("aria-pressed", d.checks[a[0]] ? "true" : "false"); b.addEventListener("click", function () { d.checks[a[0]] = !d.checks[a[0]]; b.setAttribute("aria-pressed", d.checks[a[0]] ? "true" : "false"); }); ch.appendChild(b); }); p.appendChild(ch);
+    p.appendChild(el("p", "q", "When did you run?")); var wr = el("div", "checks");
+    WHEN.forEach(function (w) { var b = el("button", "chip", w[1]); b.type = "button"; b.setAttribute("aria-pressed", d.when === w[0] ? "true" : "false"); b.addEventListener("click", function () { d.when = d.when === w[0] ? "" : w[0]; Array.prototype.forEach.call(wr.children, function (x, i) { x.setAttribute("aria-pressed", WHEN[i][0] === d.when ? "true" : "false"); }); }); wr.appendChild(b); }); p.appendChild(wr);
+    var tip = el("textarea"); tip.maxLength = 200; tip.placeholder = "One tip for the next runner (optional)"; tip.value = d.tip; tip.setAttribute("aria-label", "Tip for the next runner"); tip.addEventListener("input", function () { d.tip = tip.value; }); p.appendChild(tip);
+    var hp = el("input", "hp"); hp.tabIndex = -1; hp.setAttribute("aria-hidden", "true"); hp.autocomplete = "off"; p.appendChild(hp);
+    var msg = el("p", "msg"); msg.hidden = true; var save = el("button", "btn", mine ? "Update rating" : "Save rating"); save.type = "button"; if (!apiOk) save.disabled = true;
+    save.addEventListener("click", function () {
+      if (!d.stars) { say(msg, "Pick a star rating first.", true); return; }
+      var body = { type: "review", spot: sp.id, rid: rid, stars: d.stars, when: d.when, tip: d.tip, hp: hp.value }; AMEN.forEach(function (a) { body[a[0]] = !!d.checks[a[0]]; });
+      save.disabled = true;
+      post(body).then(function () { delete drafts[sp.id]; openSpot[sp.id] = false; loadSpots(); }, function (m) { save.disabled = false; say(msg, m, true); });
+    });
+    p.appendChild(save); p.appendChild(msg); return p;
+  }
+  function post(body) {
+    return fetch("/api/spots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (r) {
+      if (r.ok) return r.json(); return Promise.reject(r.status === 429 ? "You've sent a lot in the last hour. Please try again later." : r.status === 503 ? "Ratings aren't switched on yet." : "That didn't go through. Check the details and try again.");
+    }, function () { return Promise.reject("No connection. Try again."); });
+  }
+  function loadSpots() {
+    return fetch("/api/spots").then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); }).then(function (j) {
+      apiOk = true; dbSpots = (j.spots || []).filter(function (s) { return s.name && s.zone; }); reviews = j.reviews || []; say($("sp-status"), "", false); renderSpots(); if (done()) showPath(true); if (!$("sp-form").hidden) buildSpotForm();
+    }).catch(function () { apiOk = false; say($("sp-status"), "Community ratings are not switched on yet. The starter list below is read-only.", true); renderSpots(); });
+  }
+
+  /* ---------- spot form + map ---------- */
+  var map = null, layer = null, draftPin = null, placing = false, draftMarker = null;
+  function mapReady() {
+    if (map || typeof L === "undefined") { if (map) map.invalidateSize(); return; }
+    $("map").hidden = false;
+    map = L.map("map", { scrollWheelZoom: false }).setView([13.0475, 80.24], 11);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    layer = L.layerGroup().addTo(map);
+    map.on("click", function (e) { if (!placing) return; draftPin = [e.latlng.lat, e.latlng.lng]; if (draftMarker) map.removeLayer(draftMarker); draftMarker = L.marker(draftPin).addTo(map); var s = $("pin-state"); if (s) s.textContent = "Pin set ✓"; });
+    drawMarkers();
+  }
+  function drawMarkers() {
+    if (!map || !layer) return; layer.clearLayers();
+    allSpots().forEach(function (s) { if (!s.lat) return; var a = agg(s), box = el("div"); box.appendChild(el("strong", "", s.name)); box.appendChild(el("div", "", a.n ? a.avg.toFixed(1) + " / 5 (" + a.n + ")" : "unrated")); L.marker([s.lat, s.lng]).bindPopup(box).addTo(layer); });
+  }
+  function buildSpotForm() {
+    var f = $("sp-form"); f.textContent = ""; f.appendChild(el("h2", "", T("sp_add")));
+    function fld(label, node) { var l = el("label", "f"); l.appendChild(document.createTextNode(label)); l.appendChild(node); return l; }
+    var name = el("input"); name.type = "text"; name.maxLength = 60; name.placeholder = "e.g. Elliot's Beach loop";
+    var area = el("input"); area.type = "text"; area.maxLength = 40; area.placeholder = "e.g. Besant Nagar";
+    var zone = el("select"); var z0 = el("option", "", "Choose…"); z0.value = ""; zone.appendChild(z0); ZONES.forEach(function (z) { var o = el("option", "", T(z[1]).split(" (")[0]); o.value = z[0]; zone.appendChild(o); });
+    var kind = el("select"); STYPES.forEach(function (t) { var o = el("option", "", t); o.value = t; kind.appendChild(o); });
+    var km = el("input"); km.type = "number"; km.min = "0.2"; km.max = "60"; km.step = "0.1"; km.placeholder = "optional";
+    var note = el("textarea"); note.maxLength = 200; note.placeholder = "Where to start, which gate, how crowded it gets";
+    var hp = el("input", "hp"); hp.tabIndex = -1; hp.setAttribute("aria-hidden", "true"); hp.autocomplete = "off";
+    f.appendChild(fld("Name", name)); var r1 = el("div", "row"); r1.appendChild(fld("Area", area)); r1.appendChild(fld(T("f_zone"), zone)); f.appendChild(r1);
+    var r2 = el("div", "row"); r2.appendChild(fld(T("f_type"), kind)); r2.appendChild(fld("Loop length (km)", km)); f.appendChild(r2); f.appendChild(fld("Anything a first-timer should know?", note));
+    var pinRow = el("div", "row"); var pinBtn = el("button", "btn ghost", "Drop a pin on the map"); pinBtn.type = "button"; var ps = el("span", "meta", draftPin ? "Pin set ✓" : ""); ps.id = "pin-state";
+    pinBtn.addEventListener("click", function () { placing = true; if (typeof L === "undefined") { ps.textContent = "Map not available"; return; } $("map").scrollIntoView({ behavior: "smooth", block: "center" }); ps.textContent = "Tap the map to place the pin"; });
+    pinRow.appendChild(pinBtn); pinRow.appendChild(ps); f.appendChild(pinRow); f.appendChild(hp);
+    f.appendChild(el("p", "meta", "Please don't add private homes or personal details."));
+    var msg = el("p", "msg"); msg.hidden = true; var act = el("div", "actions"); var save = el("button", "btn", "Save spot"); save.type = "button"; if (!apiOk) save.disabled = true; var cancel = el("button", "btn ghost", "Cancel"); cancel.type = "button";
+    cancel.addEventListener("click", function () { f.hidden = true; placing = false; });
+    save.addEventListener("click", function () {
+      var nm = name.value.trim(), ar = area.value.trim();
+      if (nm.length < 3 || ar.length < 2 || !zone.value) { say(msg, "Add a name, an area and the part of the city.", true); return; }
+      if (allSpots().some(function (s) { return s.name.toLowerCase() === nm.toLowerCase() && s.area.toLowerCase() === ar.toLowerCase(); })) { say(msg, "That spot is already listed. Find it below and rate it.", true); return; }
+      var body = { type: "spot", name: nm, area: ar, zone: zone.value, kind: kind.value, note: note.value, hp: hp.value }; if (km.value) body.km = +km.value; if (draftPin) { body.lat = draftPin[0]; body.lng = draftPin[1]; }
+      save.disabled = true; post(body).then(function () { f.hidden = true; placing = false; if (draftMarker && map) map.removeLayer(draftMarker); draftPin = null; draftMarker = null; loadSpots(); }, function (m) { save.disabled = false; say(msg, m, true); });
+    });
+    act.appendChild(save); act.appendChild(cancel); f.appendChild(act); f.appendChild(msg);
+  }
+  $("sp-add").addEventListener("click", function () { var f = $("sp-form"); f.hidden = !f.hidden; if (!f.hidden) { buildSpotForm(); mapReady(); } else placing = false; });
+
+  /* ---------- language + init ---------- */
+  function applyLang() {
+    document.documentElement.lang = LANG;
+    qa("[data-i]").forEach(function (n) { n.textContent = T(n.dataset.i); });
+    $("lang-en").setAttribute("aria-pressed", LANG === "en" ? "true" : "false"); $("lang-ta").setAttribute("aria-pressed", LANG === "ta" ? "true" : "false");
+    renderStartOpts(); renderEventFilter(); renderEvents(); buildSuggest(); fillZoneSelect($("g-zone"), "f_allzones"); fillZoneSelect($("sp-zone"), "f_allzones");
+    var o = $("g-net").firstChild; o.textContent = T("f_both"); renderGroups(); renderSpots(); renderLearn();
+  }
+  function setLang(l) { LANG = l; try { localStorage.setItem("rc-lang", l); } catch (e) {} applyLang(); }
+  $("lang-en").addEventListener("click", function () { setLang("en"); });
+  $("lang-ta").addEventListener("click", function () { setLang("ta"); });
+  $("l-start").addEventListener("click", function () { lTrack = "start"; renderLearn(); });
+  $("l-deep").addEventListener("click", function () { lTrack = "deep"; renderLearn(); });
+  try { if (localStorage.getItem("rc-nav") === "1") $("nav").hidden = false; } catch (e) {}
+  if (!$("nav").hidden) $("browse").hidden = true;
+  applyLang(); route(); loadSpots();
+  window.RunChennai = { GROUPS: GROUPS, EVENTS: EVENTS };
+})();
+</script>
+</body>
+</html>
