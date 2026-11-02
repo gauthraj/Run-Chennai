@@ -530,7 +530,7 @@ html { color-scheme: light; }
 
 
   /* ---------- today card (heat forecast; hidden if forecast unavailable) ---------- */
-  var HEAT_URL = ""; /* set to your Chennai Heat Hours address, e.g. "https://chennai-heat-hours.vercel.app" */
+  var HEAT_URL = "https://chennai-heat-hours.vercel.app"; /* set to your Chennai Heat Hours address, e.g. "https://chennai-heat-hours.vercel.app" */
   var todayData = null;
   function hh(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? " AM" : " PM"); }
   function renderToday() {
